@@ -112,3 +112,238 @@ body {
 .btn-primary:hover {
   background: #0F6E56;
 }
+
+.btn-full {
+  width: 100%;
+}
+
+/* ── Screen (Add Room etc) ── */
+.screen {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.screen-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #e5e5e5;
+}
+
+.screen-header h2 {
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.btn-back {
+  background: none;
+  border: none;
+  color: #1D9E75;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+}
+
+/* ── Form ── */
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.form-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #374151;
+}
+
+.form-input {
+  border: 1.5px solid #d1d5db;
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 15px;
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.form-input:focus {
+  border-color: #1D9E75;
+}
+
+.form-error {
+  color: #dc2626;
+  font-size: 14px;
+}
+
+/* ── Color grid ── */
+.color-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 10px;
+}
+
+.color-swatch {
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  border: 3px solid transparent;
+  cursor: pointer;
+  transition: transform 0.1s, border-color 0.1s;
+}
+
+.color-swatch:hover {
+  transform: scale(1.1);
+}
+
+.color-swatch.selected {
+  border-color: #1D9E75;
+  transform: scale(1.1);
+}
+
+.white-swatch {
+  border-color: #ccc !important;
+}
+
+.color-preview {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.color-dot {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+/* ── Range chips ── */
+/* Custom color picker */
+.custom-swatch {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  color: #6b7280;
+  border: 2px dashed #d1d5db !important;
+}
+
+.custom-swatch-label {
+  font-size: 20px;
+  line-height: 1;
+  color: #6b7280;
+}
+
+.custom-color-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.color-picker-input {
+  width: 48px;
+  height: 48px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  padding: 2px;
+  background: none;
+}
+
+.custom-hex-label {
+  font-size: 14px;
+  font-weight: 500;
+  color: #374151;
+  font-family: monospace;
+}
+
+.range-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.range-chip {
+  padding: 10px 14px;
+  border-radius: 8px;
+  border: 1.5px solid #1D9E75;
+  background: #f0fdf8;
+  color: #1D9E75;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.15s;
+}
+
+.range-chip:hover:not(.taken) {
+  background: #1D9E75;
+  color: #fff;
+}
+
+.range-chip.selected {
+  background: #1D9E75;
+  color: #fff;
+}
+
+.range-chip.taken {
+  border-color: #d1d5db;
+  background: #f3f4f6;
+  color: #9ca3af;
+  cursor: not-allowed;
+  text-decoration: line-through;
+}
+
+.range-taken-label {
+  margin-left: 8px;
+  font-size: 12px;
+  font-style: italic;
+}
+
+/* ── Room cards ── */
+.room-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.room-card {
+  display: flex;
+  border-radius: 10px;
+  border: 1px solid #e5e5e5;
+  overflow: hidden;
+}
+
+.room-card-bar {
+  width: 12px;
+  flex-shrink: 0;
+}
+
+.room-card-body {
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.room-card-name {
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.room-card-meta {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.room-card-boxes {
+  font-size: 13px;
+  color: #374151;
+  margin-top: 4px;
+}
