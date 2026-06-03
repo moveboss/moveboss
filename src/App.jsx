@@ -1,5 +1,6 @@
-import { useState, useRef } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import QRCode from 'qrcode'
+import { supabase } from './supabase'
 import './App.css'
 
 const TABS = ['Rooms', 'All Boxes', 'Packers', 'Reports']
@@ -366,26 +367,102 @@ function RoomsTab({ rooms, onAddRoom, onSelectRoom }) {
 }
 
 // ── App ──────────────────────────────────────────────────────────
-function App() {
+function App({ session }) {
   const [activeTab, setActiveTab] = useState('Rooms')
   const [screen, setScreen] = useState('home')
   const [rooms, setRooms] = useState([])
+  const [moveId, setMoveId] = useState(null)
   const [selectedRoom, setSelectedRoom] = useState(null)
   const [selectedBox, setSelectedBox] = useState(null)
+  const [loading, setLoading] = useState(true)
 
   const totalBoxes = rooms.reduce((sum, r) => sum + r.boxes.length, 0)
   const totalItems = rooms.reduce((sum, r) => sum + r.boxes.reduce((s, b) => s + (b.items||[]).length, 0), 0)
 
-  function handleSaveRoom(room) {
-    setRooms(prev => [...prev, room])
+  // Load data from Supabase on mount
+  useEffect(() => {
+    loadData()
+  }, [])
+
+  async function loadData() {
+    setLoading(true)
+    try {
+      // Get or create the move for this user
+      let { data: moves, error: movesError } = await supabase.from('moves').select('*').eq('owner_id', session.user.id)
+      if (movesError) throw movesError
+
+      let move = moves?.[0]
+      if (!move) {
+        const { data, error } = await supabase.from('moves').insert({ name: 'My Move', owner_id: session.user.id }).select().single()
+        if (error) throw error
+        move = data
+      }
+      setMoveId(move.id)
+
+      // Load rooms
+      const { data: roomRows, error: roomsError } = await supabase.from('rooms').select('*').eq('move_id', move.id)
+      if (roomsError) throw roomsError
+
+      // Load boxes and items
+      const { data: boxRows } = await supabase.from('boxes').select('*').eq('move_id', move.id)
+      const { data: itemRows } = await supabase.from('items').select('*')
+
+      const loadedRooms = (roomRows || []).map(r => ({
+        id: r.id,
+        name: r.name,
+        color: r.color,
+        colorName: r.color_name,
+        colorShort: r.color_short,
+        startNum: r.start_num,
+        nextNum: r.next_num,
+        boxes: (boxRows || []).filter(b => b.room_id === r.id).map(b => ({
+          id: b.id,
+          num: b.num,
+          code: b.code,
+          complete: b.complete,
+          qrDataUrl: b.qr_data_url,
+          items: (itemRows || []).filter(i => i.box_id === b.id).map(i => ({ id: i.id, name: i.name }))
+        }))
+      }))
+
+      setRooms(loadedRooms)
+    } catch (err) {
+      console.error('Load error:', err)
+      alert('Error loading data: ' + err.message)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  async function handleSaveRoom(room) {
+    const { data } = await supabase.from('rooms').insert({
+      move_id: moveId,
+      name: room.name,
+      color: room.color,
+      color_name: room.colorName,
+      color_short: room.colorShort,
+      start_num: room.startNum,
+      next_num: room.nextNum,
+    }).select().single()
+    const newRoom = { ...room, id: data.id, boxes: [] }
+    setRooms(prev => [...prev, newRoom])
     setScreen('home')
   }
 
-  function handleAddBox() {
+  async function handleAddBox() {
     const room = selectedRoom
     const num = room.nextNum
     const code = `${room.name.toUpperCase()}-${num}`
-    const newBox = { id: Date.now(), num, code, items: [], complete: false, qrDataUrl: null }
+    const { data } = await supabase.from('boxes').insert({
+      room_id: room.id,
+      move_id: moveId,
+      num,
+      code,
+      complete: false,
+    }).select().single()
+    // Update next_num in DB
+    await supabase.from('rooms').update({ next_num: num + 1 }).eq('id', room.id)
+    const newBox = { id: data.id, num, code, items: [], complete: false, qrDataUrl: null }
     const updatedRoom = { ...room, nextNum: num + 1, boxes: [...room.boxes, newBox] }
     setRooms(prev => prev.map(r => r.id === room.id ? updatedRoom : r))
     setSelectedRoom(updatedRoom)
@@ -393,7 +470,19 @@ function App() {
     setScreen('box')
   }
 
-  function handleUpdateBox(updatedBox) {
+  async function handleUpdateBox(updatedBox) {
+    // Save box changes to DB
+    await supabase.from('boxes').update({
+      complete: updatedBox.complete,
+      qr_data_url: updatedBox.qrDataUrl,
+    }).eq('id', updatedBox.id)
+
+    // Sync items — delete all and re-insert
+    await supabase.from('items').delete().eq('box_id', updatedBox.id)
+    if (updatedBox.items.length > 0) {
+      await supabase.from('items').insert(updatedBox.items.map(i => ({ box_id: updatedBox.id, name: i.name })))
+    }
+
     const updatedRoom = {
       ...selectedRoom,
       boxes: selectedRoom.boxes.map(b => b.id === updatedBox.id ? updatedBox : b)
@@ -404,6 +493,8 @@ function App() {
   }
 
   // Screen routing
+  if (loading) return <div className="app"><div className="empty-state" style={{paddingTop:100}}>Loading your move...</div></div>
+
   if (screen === 'addRoom') {
     return <div className="app"><AddRoomScreen rooms={rooms} onSave={handleSaveRoom} onCancel={() => setScreen('home')} /></div>
   }
@@ -427,9 +518,12 @@ function App() {
   return (
     <div className="app">
       <header className="app-header">
-        <h1 className="logo">
-          <span className="logo-move">Move</span><span className="logo-boss">Boss</span>
-        </h1>
+        <div className="header-top">
+          <h1 className="logo">
+            <span className="logo-move">Move</span><span className="logo-boss">Boss</span>
+          </h1>
+          <button className="btn-signout" onClick={() => supabase.auth.signOut()}>Sign out</button>
+        </div>
         <div className="stats-row">
           <div className="stat">
             <span className="stat-number">{rooms.length}</span>
