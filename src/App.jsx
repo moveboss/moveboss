@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
+import QRCode from 'qrcode'
 import './App.css'
 
 const TABS = ['Rooms', 'All Boxes', 'Packers', 'Reports']
@@ -46,7 +47,7 @@ function AddRoomScreen({ rooms, onSave, onCancel }) {
       colorShort: selectedColor.short,
       startNum: selectedStart,
       nextNum: selectedStart + 1,
-      boxCount: 0,
+      boxes: [],
     })
   }
 
@@ -79,7 +80,6 @@ function AddRoomScreen({ rooms, onSave, onCancel }) {
               onClick={() => setSelectedColor(color)}
             />
           ))}
-          {/* Custom color swatch */}
           <button
             className={`color-swatch custom-swatch ${selectedColor?.name === 'Custom' ? 'selected' : ''}`}
             style={{ background: selectedColor?.name === 'Custom' ? customHex : '#e5e7eb' }}
@@ -123,7 +123,6 @@ function AddRoomScreen({ rooms, onSave, onCancel }) {
                 className={`range-chip ${taken ? 'taken' : ''} ${selectedStart === start ? 'selected' : ''}`}
                 onClick={() => !taken && setSelectedStart(start)}
                 disabled={taken}
-                title={taken ? `Used by ${takenRoom?.name}` : `${start}–${start + 99}`}
               >
                 {start}–{start + 99}
                 {taken && <span className="range-taken-label">{takenRoom?.name}</span>}
@@ -134,14 +133,199 @@ function AddRoomScreen({ rooms, onSave, onCancel }) {
       </div>
 
       {error && <p className="form-error">{error}</p>}
-
       <button className="btn-primary btn-full" onClick={handleSave}>Save Room</button>
     </div>
   )
 }
 
+// ── Box Screen ───────────────────────────────────────────────────
+function BoxScreen({ box, room, onUpdate, onBack }) {
+  const [itemInput, setItemInput] = useState('')
+  const [qrDataUrl, setQrDataUrl] = useState(null)
+  const canvasRef = useRef(null)
+
+  const boxedItems = box.items || []
+  const isComplete = box.complete
+
+  function addItem() {
+    const val = itemInput.trim()
+    if (!val) return
+    const newItems = [...boxedItems, { id: Date.now(), name: val }]
+    onUpdate({ ...box, items: newItems })
+    setItemInput('')
+  }
+
+  function removeItem(id) {
+    onUpdate({ ...box, items: boxedItems.filter(i => i.id !== id) })
+  }
+
+  async function completeBox() {
+    if (boxedItems.length === 0) return
+    const qrText = `MOVEBOSS|${box.code}|${box.id}`
+    const url = await QRCode.toDataURL(qrText, { width: 256, margin: 2 })
+    setQrDataUrl(url)
+    onUpdate({ ...box, complete: true, qrDataUrl: url })
+  }
+
+  function reopenBox() {
+    setQrDataUrl(null)
+    onUpdate({ ...box, complete: false, qrDataUrl: null })
+  }
+
+  function printLabel() {
+    const win = window.open('', '_blank')
+    win.document.write(`
+      <html><head><title>MoveBoss Label – ${box.code}</title>
+      <style>
+        body { font-family: sans-serif; display: flex; flex-direction: column; align-items: center; padding: 40px; }
+        .label-code { font-size: 48px; font-weight: 800; letter-spacing: 2px; margin-bottom: 16px; }
+        .label-room { font-size: 20px; color: #555; margin-bottom: 24px; }
+        img { width: 200px; height: 200px; }
+        .label-items { margin-top: 24px; text-align: left; width: 260px; }
+        .label-items li { font-size: 14px; margin-bottom: 4px; }
+        .label-footer { margin-top: 32px; font-size: 12px; color: #999; }
+      </style></head><body>
+      <div class="label-code" style="color:${room.color}">${box.code}</div>
+      <div class="label-room">${room.name}</div>
+      <img src="${box.qrDataUrl}" />
+      <div class="label-items"><ul>${boxedItems.map(i => `<li>${i.name}</li>`).join('')}</ul></div>
+      <div class="label-footer">MoveBoss</div>
+      <script>window.onload=()=>window.print()</script>
+      </body></html>
+    `)
+    win.document.close()
+  }
+
+  const usedCount = room.boxes.length
+  const showWarning75 = usedCount >= 75 && usedCount < 90
+  const showWarning90 = usedCount >= 90
+
+  return (
+    <div className="screen">
+      <div className="screen-header">
+        <button className="btn-back" onClick={onBack}>← Back</button>
+        <div className="box-header-info">
+          <span className="color-dot" style={{ background: room.color, border: room.colorName === 'White' ? '2px solid #ccc' : 'none' }} />
+          <h2>{box.code}</h2>
+          <span className={`badge ${isComplete ? 'badge-complete' : 'badge-packing'}`}>
+            {isComplete ? 'Packed ✓' : 'Packing'}
+          </span>
+        </div>
+      </div>
+
+      {showWarning90 && <div className="warning warning-red">⚠️ Almost full! Only {99 - usedCount} boxes left in this range.</div>}
+      {showWarning75 && !showWarning90 && <div className="warning warning-amber">📦 {usedCount} of 99 boxes used in this range.</div>}
+
+      {!isComplete && (
+        <div className="form-group">
+          <label className="form-label">Add Item</label>
+          <div className="item-input-row">
+            <input
+              className="form-input"
+              placeholder="e.g. Coffee maker"
+              value={itemInput}
+              onChange={e => setItemInput(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && addItem()}
+            />
+            <button className="btn-primary" onClick={addItem}>Add</button>
+          </div>
+        </div>
+      )}
+
+      <div className="form-group">
+        <label className="form-label">Items ({boxedItems.length})</label>
+        {boxedItems.length === 0
+          ? <p className="empty-hint">No items yet. Add something above.</p>
+          : (
+            <ul className="item-list">
+              {boxedItems.map(item => (
+                <li key={item.id} className="item-row">
+                  <span>{item.name}</span>
+                  {!isComplete && (
+                    <button className="btn-remove" onClick={() => removeItem(item.id)}>✕</button>
+                  )}
+                </li>
+              ))}
+            </ul>
+          )
+        }
+      </div>
+
+      {!isComplete && (
+        <button
+          className="btn-primary btn-full"
+          onClick={completeBox}
+          disabled={boxedItems.length === 0}
+          style={{ opacity: boxedItems.length === 0 ? 0.4 : 1 }}
+        >
+          ✓ Complete Box &amp; Get QR Code
+        </button>
+      )}
+
+      {isComplete && (
+        <div className="qr-section">
+          <img src={box.qrDataUrl} alt="QR Code" className="qr-image" />
+          <div className="qr-actions">
+            <button className="btn-primary" onClick={printLabel}>🖨 Print Label</button>
+            <a className="btn-primary" href={box.qrDataUrl} download={`${box.code}.png`}>⬇ Download QR</a>
+          </div>
+          <button className="btn-reopen" onClick={reopenBox}>↩ Reopen Box</button>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ── Room Screen ──────────────────────────────────────────────────
+function RoomScreen({ room, onAddBox, onSelectBox, onBack }) {
+  const boxes = room.boxes || []
+  const usedCount = boxes.length
+  const atLimit = usedCount >= 99
+  const showWarning75 = usedCount >= 75 && usedCount < 90
+  const showWarning90 = usedCount >= 90
+
+  return (
+    <div className="screen">
+      <div className="screen-header">
+        <button className="btn-back" onClick={onBack}>← Back</button>
+        <span className="color-dot lg" style={{ background: room.color, border: room.colorName === 'White' ? '2px solid #ccc' : 'none' }} />
+        <h2>{room.name}</h2>
+      </div>
+
+      {showWarning90 && <div className="warning warning-red">⚠️ Almost full! {99 - usedCount} boxes left in this range.</div>}
+      {showWarning75 && !showWarning90 && <div className="warning warning-amber">📦 {usedCount} of 99 boxes used in this range.</div>}
+
+      {boxes.length === 0
+        ? <p className="empty-hint" style={{ paddingTop: 24 }}>No boxes yet. Add your first box!</p>
+        : (
+          <ul className="box-list">
+            {boxes.map(box => (
+              <li key={box.id} className="box-row" onClick={() => onSelectBox(box)}>
+                <span className="box-code">{box.code}</span>
+                <span className="box-item-count">{(box.items||[]).length} items</span>
+                <span className={`badge ${box.complete ? 'badge-complete' : 'badge-packing'}`}>
+                  {box.complete ? 'Packed ✓' : 'Packing'}
+                </span>
+              </li>
+            ))}
+          </ul>
+        )
+      }
+
+      <button
+        className="btn-primary btn-full"
+        style={{ marginTop: 20 }}
+        onClick={onAddBox}
+        disabled={atLimit}
+      >
+        + Add New Box
+      </button>
+    </div>
+  )
+}
+
 // ── Rooms Tab ────────────────────────────────────────────────────
-function RoomsTab({ rooms, onAddRoom }) {
+function RoomsTab({ rooms, onAddRoom, onSelectRoom }) {
   if (rooms.length === 0) {
     return (
       <div className="empty-state">
@@ -154,13 +338,14 @@ function RoomsTab({ rooms, onAddRoom }) {
     <div>
       <div className="room-grid">
         {rooms.map(room => (
-          <div key={room.id} className="room-card">
+          <div key={room.id} className="room-card" onClick={() => onSelectRoom(room)}>
             <div className="room-card-bar" style={{ background: room.color, border: room.colorName === 'White' ? '1px solid #ccc' : 'none' }} />
             <div className="room-card-body">
               <span className="room-card-name">{room.name}</span>
               <span className="room-card-meta">{room.colorShort} · {room.startNum}–{room.startNum + 99}</span>
-              <span className="room-card-boxes">{room.boxCount} boxes</span>
+              <span className="room-card-boxes">{room.boxes.length} boxes</span>
             </div>
+            <span className="room-card-arrow">›</span>
           </div>
         ))}
       </div>
@@ -172,24 +357,60 @@ function RoomsTab({ rooms, onAddRoom }) {
 // ── App ──────────────────────────────────────────────────────────
 function App() {
   const [activeTab, setActiveTab] = useState('Rooms')
-  const [screen, setScreen] = useState('home') // 'home' | 'addRoom'
+  const [screen, setScreen] = useState('home')
   const [rooms, setRooms] = useState([])
+  const [selectedRoom, setSelectedRoom] = useState(null)
+  const [selectedBox, setSelectedBox] = useState(null)
+
+  const totalBoxes = rooms.reduce((sum, r) => sum + r.boxes.length, 0)
+  const totalItems = rooms.reduce((sum, r) => sum + r.boxes.reduce((s, b) => s + (b.items||[]).length, 0), 0)
 
   function handleSaveRoom(room) {
     setRooms(prev => [...prev, room])
     setScreen('home')
   }
 
+  function handleAddBox() {
+    const room = selectedRoom
+    const num = room.nextNum
+    const code = `${room.colorShort}-${num}`
+    const newBox = { id: Date.now(), num, code, items: [], complete: false, qrDataUrl: null }
+    const updatedRoom = { ...room, nextNum: num + 1, boxes: [...room.boxes, newBox] }
+    setRooms(prev => prev.map(r => r.id === room.id ? updatedRoom : r))
+    setSelectedRoom(updatedRoom)
+    setSelectedBox(newBox)
+    setScreen('box')
+  }
+
+  function handleUpdateBox(updatedBox) {
+    const updatedRoom = {
+      ...selectedRoom,
+      boxes: selectedRoom.boxes.map(b => b.id === updatedBox.id ? updatedBox : b)
+    }
+    setRooms(prev => prev.map(r => r.id === updatedRoom.id ? updatedRoom : r))
+    setSelectedRoom(updatedRoom)
+    setSelectedBox(updatedBox)
+  }
+
+  // Screen routing
   if (screen === 'addRoom') {
-    return (
-      <div className="app">
-        <AddRoomScreen
-          rooms={rooms}
-          onSave={handleSaveRoom}
-          onCancel={() => setScreen('home')}
-        />
-      </div>
-    )
+    return <div className="app"><AddRoomScreen rooms={rooms} onSave={handleSaveRoom} onCancel={() => setScreen('home')} /></div>
+  }
+  if (screen === 'room') {
+    return <div className="app"><RoomScreen
+      room={selectedRoom}
+      onAddBox={handleAddBox}
+      onSelectBox={box => { setSelectedBox(box); setScreen('box') }}
+      onBack={() => setScreen('home')}
+    /></div>
+  }
+  if (screen === 'box') {
+    return <div className="app"><BoxScreen
+      box={selectedBox}
+      room={selectedRoom}
+      onUpdate={handleUpdateBox}
+      onBack={() => setScreen('room')}
+    /></div>
   }
 
   return (
@@ -204,11 +425,11 @@ function App() {
             <span className="stat-label">Rooms</span>
           </div>
           <div className="stat">
-            <span className="stat-number">0</span>
+            <span className="stat-number">{totalBoxes}</span>
             <span className="stat-label">Boxes</span>
           </div>
           <div className="stat">
-            <span className="stat-number">0</span>
+            <span className="stat-number">{totalItems}</span>
             <span className="stat-label">Items</span>
           </div>
         </div>
@@ -227,10 +448,29 @@ function App() {
 
       <main className="tab-content">
         {activeTab === 'Rooms' && (
-          <RoomsTab rooms={rooms} onAddRoom={() => setScreen('addRoom')} />
+          <RoomsTab
+            rooms={rooms}
+            onAddRoom={() => setScreen('addRoom')}
+            onSelectRoom={room => { setSelectedRoom(room); setScreen('room') }}
+          />
         )}
         {activeTab === 'All Boxes' && (
-          <div className="empty-state"><p>No boxes yet. Add a room first.</p></div>
+          rooms.length === 0
+            ? <div className="empty-state"><p>No boxes yet. Add a room first.</p></div>
+            : (
+              <ul className="box-list">
+                {rooms.flatMap(room => room.boxes.map(box => (
+                  <li key={box.id} className="box-row" onClick={() => { setSelectedRoom(room); setSelectedBox(box); setScreen('box') }}>
+                    <span className="color-dot sm" style={{ background: room.color, border: room.colorName === 'White' ? '1px solid #ccc' : 'none' }} />
+                    <span className="box-code">{box.code}</span>
+                    <span className="box-item-count">{(box.items||[]).length} items</span>
+                    <span className={`badge ${box.complete ? 'badge-complete' : 'badge-packing'}`}>
+                      {box.complete ? 'Packed ✓' : 'Packing'}
+                    </span>
+                  </li>
+                )))}
+              </ul>
+            )
         )}
         {activeTab === 'Packers' && (
           <div className="empty-state">
