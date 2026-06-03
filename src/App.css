@@ -536,3 +536,20 @@ body {
   background: #fee2e2;
   color: #991b1b;
 }
+
+/* ── Expand note ── */
+.expand-note {
+  background: #f0fdf8;
+  border: 1px solid #1D9E75;
+  border-radius: 8px;
+  padding: 12px 14px;
+  font-size: 14px;
+  color: #374151;
+  text-align: center;
+}
+
+.expand-note a {
+  color: #1D9E75;
+  font-weight: 600;
+  text-decoration: none;
+}

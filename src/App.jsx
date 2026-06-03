@@ -22,7 +22,12 @@ const COLORS = [
   { name: 'Mint',       hex: '#6EE7B7', short: 'MNT' },
 ]
 
-const HUNDRED_BLOCKS = [100,200,300,400,500,600,700,800,900]
+const HUNDRED_BLOCKS = [
+  1000,1100,1200,1300,1400,
+  1500,1600,1700,1800,1900,
+  2000,2100,2200,2300,2400,
+]
+const MAX_ROOMS = 15
 
 // ── Add Room Screen ──────────────────────────────────────────────
 function AddRoomScreen({ rooms, onSave, onCancel }) {
@@ -132,8 +137,14 @@ function AddRoomScreen({ rooms, onSave, onCancel }) {
         </div>
       </div>
 
+      {rooms.length >= MAX_ROOMS && (
+        <div className="expand-note">
+          🏠 Need more than 15 rooms? <a href="mailto:getmoveboss@gmail.com">Contact us</a> to expand your move.
+        </div>
+      )}
+
       {error && <p className="form-error">{error}</p>}
-      <button className="btn-primary btn-full" onClick={handleSave}>Save Room</button>
+      <button className="btn-primary btn-full" onClick={handleSave} disabled={rooms.length >= MAX_ROOMS}>Save Room</button>
     </div>
   )
 }
@@ -342,7 +353,7 @@ function RoomsTab({ rooms, onAddRoom, onSelectRoom }) {
             <div className="room-card-bar" style={{ background: room.color, border: room.colorName === 'White' ? '1px solid #ccc' : 'none' }} />
             <div className="room-card-body">
               <span className="room-card-name">{room.name}</span>
-              <span className="room-card-meta">{room.colorShort} · {room.startNum}–{room.startNum + 99}</span>
+              <span className="room-card-meta">{room.startNum}–{room.startNum + 99}</span>
               <span className="room-card-boxes">{room.boxes.length} boxes</span>
             </div>
             <span className="room-card-arrow">›</span>
@@ -373,7 +384,7 @@ function App() {
   function handleAddBox() {
     const room = selectedRoom
     const num = room.nextNum
-    const code = `${room.colorShort}-${num}`
+    const code = `${room.name.toUpperCase()}-${num}`
     const newBox = { id: Date.now(), num, code, items: [], complete: false, qrDataUrl: null }
     const updatedRoom = { ...room, nextNum: num + 1, boxes: [...room.boxes, newBox] }
     setRooms(prev => prev.map(r => r.id === room.id ? updatedRoom : r))
