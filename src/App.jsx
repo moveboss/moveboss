@@ -239,13 +239,13 @@ function BoxScreen({ box, room, isOwner, moveReady, session, onUpdate, onBack, o
     win.document.write(`
       <html><head><title>MoveBoss Label – ${box.code}</title>
       <style>
-        body { font-family: sans-serif; display: flex; flex-direction: column; align-items: center; padding: 40px; }
-        .label-code { font-size: 48px; font-weight: 800; letter-spacing: 2px; margin-bottom: 16px; }
-        .label-room { font-size: 20px; color: #555; margin-bottom: 24px; }
-        img { width: 200px; height: 200px; }
-        .label-items { margin-top: 24px; text-align: left; width: 260px; }
-        .label-items li { font-size: 14px; margin-bottom: 4px; }
-        .label-footer { margin-top: 32px; font-size: 12px; color: #999; }
+        body { font-family: sans-serif; display: flex; flex-direction: column; align-items: center; padding: 20px; }
+        .label-code { font-size: 32px; font-weight: 800; letter-spacing: 2px; margin-bottom: 8px; }
+        .label-room { font-size: 15px; color: #555; margin-bottom: 12px; }
+        img { width: 120px; height: 120px; }
+        .label-items { margin-top: 12px; text-align: left; width: 180px; }
+        .label-items li { font-size: 12px; margin-bottom: 3px; }
+        .label-footer { margin-top: 16px; font-size: 10px; color: #999; }
       </style></head><body>
       <div class="label-code" style="color:${room.color}">${box.code}</div>
       <div class="label-room">${room.name}</div>
