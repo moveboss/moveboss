@@ -11,11 +11,14 @@ const joinCode = urlParams.get('join')
 
 async function handleJoin(userId, email) {
   if (!joinCode) return
+  console.log('Joining with code:', joinCode)
   // Find the move with this invite code
-  const { data: move } = await supabase.from('moves').select('id').eq('invite_code', joinCode).single()
+  const { data: move, error: moveError } = await supabase.from('moves').select('id').eq('invite_code', joinCode).single()
+  console.log('Move found:', move, 'Error:', moveError)
   if (!move) return
-  // Add user as a member (ignore if already exists)
-  await supabase.from('move_members').upsert({ move_id: move.id, user_id: userId, email }, { onConflict: 'move_id,user_id' })
+  // Add user as a member
+  const { error: insertError } = await supabase.from('move_members').insert({ move_id: move.id, user_id: userId, email })
+  console.log('Member insert error:', insertError)
   // Clean up URL
   window.history.replaceState({}, '', '/')
 }
