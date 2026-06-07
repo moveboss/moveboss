@@ -646,7 +646,7 @@ function AllBoxesTab({ rooms, onSelectBox }) {
 }
 
 // ── Packers Tab ──────────────────────────────────────────────────
-function PackersTab({ inviteCode, members, isOwner, ownerEmail }) {
+function PackersTab({ inviteCode, members, setMembers, isOwner, ownerEmail }) {
   const [copied, setCopied] = useState(false)
   const inviteLink = `${window.location.origin}/?join=${inviteCode}`
 
@@ -654,6 +654,12 @@ function PackersTab({ inviteCode, members, isOwner, ownerEmail }) {
     navigator.clipboard.writeText(inviteLink)
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
+  }
+
+  async function toggleRole(member) {
+    const newRole = member.role === 'owner' ? 'packer' : 'owner'
+    await supabase.from('move_members').update({ role: newRole }).eq('id', member.id)
+    setMembers(prev => prev.map(m => m.id === member.id ? { ...m, role: newRole } : m))
   }
 
   if (!isOwner) {
@@ -684,27 +690,35 @@ function PackersTab({ inviteCode, members, isOwner, ownerEmail }) {
       </div>
 
       <div className="report-card">
-        <div className="report-card-title">👥 Packers ({members.length})</div>
+        <div className="report-card-title">👥 Team ({members.length})</div>
         {members.length === 0
           ? <p style={{ fontSize: 13, color: '#9ca3af', marginTop: 8 }}>No one has joined yet. Share the invite link above!</p>
           : (
             <ul style={{ listStyle: 'none', marginTop: 12, display: 'flex', flexDirection: 'column', gap: 8 }}>
               {members.map(m => (
                 <li key={m.id} className="member-row">
-                  <span className="member-avatar">{(m.email||'?')[0].toUpperCase()}</span>
+                  <span className="member-avatar" style={{ background: m.role === 'owner' ? '#7C3AED' : '#1D9E75' }}>{(m.email||'?')[0].toUpperCase()}</span>
                   <span className="member-email">{m.email}</span>
-                  <span className="badge badge-packing">{m.role}</span>
+                  <button
+                    className={`badge ${m.role === 'owner' ? 'badge-complete' : 'badge-packing'}`}
+                    style={{ cursor: 'pointer', border: 'none' }}
+                    onClick={() => toggleRole(m)}
+                    title="Click to change role"
+                  >
+                    {m.role}
+                  </button>
                 </li>
               ))}
             </ul>
           )
         }
+        {members.length > 0 && <p style={{ fontSize: 12, color: '#9ca3af', marginTop: 10 }}>Tap a role badge to toggle between packer and owner.</p>}
       </div>
 
       <div className="report-card">
-        <div className="report-card-title">👑 Move Owner</div>
+        <div className="report-card-title">👑 Move Creator</div>
         <div className="member-row" style={{ marginTop: 8 }}>
-          <span className="member-avatar">{ownerEmail[0].toUpperCase()}</span>
+          <span className="member-avatar" style={{ background: '#7C3AED' }}>{ownerEmail[0].toUpperCase()}</span>
           <span className="member-email">{ownerEmail}</span>
           <span className="badge badge-complete">owner</span>
         </div>
@@ -915,7 +929,7 @@ function App({ session }) {
         if (membership) {
           const { data: sharedMove } = await supabase.from('moves').select('*').eq('id', membership.move_id).single()
           move = sharedMove
-          owner = false
+          owner = membership.role === 'owner'
         } else {
           // Check if user owns a move
           const { data: ownedMoves } = await supabase.from('moves').select('*').eq('owner_id', session.user.id)
@@ -1170,6 +1184,7 @@ function App({ session }) {
           <PackersTab
             inviteCode={inviteCode}
             members={members}
+            setMembers={setMembers}
             isOwner={isOwner}
             ownerEmail={session.user.email}
           />
