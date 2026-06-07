@@ -884,6 +884,8 @@ function App({ session }) {
   const [inviteCode, setInviteCode] = useState(null)
   const [members, setMembers] = useState([])
   const [isOwner, setIsOwner] = useState(true)
+  const [toasts, setToasts] = useState([])
+  const prevRoomsRef = useRef([])
 
   const totalBoxes = rooms.reduce((sum, r) => sum + r.boxes.length, 0)
   const totalItems = rooms.reduce((sum, r) => sum + r.boxes.reduce((s, b) => s + (b.items||[]).length, 0), 0)
@@ -908,6 +910,12 @@ function App({ session }) {
     return () => { supabase.removeChannel(channel) }
   }, [moveId])
 
+  function addToast(message, type = 'info') {
+    const id = Date.now()
+    setToasts(prev => [...prev, { id, message, type }])
+    setTimeout(() => setToasts(prev => prev.filter(t => t.id !== id)), 5000)
+  }
+
   async function reloadRooms(mid) {
     const { data: roomRows } = await supabase.from('rooms').select('*').eq('move_id', mid)
     const { data: boxRows } = await supabase.from('boxes').select('*').eq('move_id', mid)
@@ -921,6 +929,34 @@ function App({ session }) {
         items: (itemRows || []).filter(i => i.box_id === b.id).map(i => ({ id: i.id, name: i.name }))
       }))
     }))
+
+    // Compare to previous rooms to fire notifications
+    const prev = prevRoomsRef.current
+    if (prev.length > 0) {
+      // Room assigned to current user
+      loadedRooms.forEach(newRoom => {
+        const oldRoom = prev.find(r => r.id === newRoom.id)
+        if (newRoom.assignedTo === session.user.id && oldRoom?.assignedTo !== session.user.id) {
+          addToast(`🏠 You've been assigned: ${newRoom.name}`, 'assign')
+        }
+        // Room fully packed (has boxes and all are complete)
+        if (newRoom.boxes.length > 0) {
+          const nowDone = newRoom.boxes.every(b => b.complete)
+          const wasDone = oldRoom ? oldRoom.boxes.every(b => b.complete) : false
+          if (nowDone && !wasDone) {
+            addToast(`✅ ${newRoom.name} is fully packed!`, 'complete')
+          }
+        }
+      })
+      // Everything packed
+      const allBoxes = loadedRooms.flatMap(r => r.boxes)
+      const prevAllBoxes = prev.flatMap(r => r.boxes)
+      if (allBoxes.length > 0 && allBoxes.every(b => b.complete) && !prevAllBoxes.every(b => b.complete)) {
+        addToast('🎉 Everything is packed! You\'re ready to move!', 'celebrate')
+      }
+    }
+
+    prevRoomsRef.current = loadedRooms
     setRooms(loadedRooms)
   }
 
@@ -1019,6 +1055,7 @@ function App({ session }) {
         }))
       }))
 
+      prevRoomsRef.current = loadedRooms
       setRooms(loadedRooms)
     } catch (err) {
       console.error('Load error:', err)
@@ -1176,6 +1213,16 @@ function App({ session }) {
 
   return (
     <div className="app">
+      {toasts.length > 0 && (
+        <div className="toast-container">
+          {toasts.map(t => (
+            <div key={t.id} className={`toast toast-${t.type}`}>
+              <span>{t.message}</span>
+              <button className="toast-close" onClick={() => setToasts(prev => prev.filter(x => x.id !== t.id))}>✕</button>
+            </div>
+          ))}
+        </div>
+      )}
       {scanning && <Scanner rooms={rooms} onClose={() => setScanning(false)} />}
       <header className="app-header">
         <div className="header-top">
