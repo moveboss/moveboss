@@ -295,19 +295,46 @@ function BoxScreen({ box, room, onUpdate, onBack }) {
 }
 
 // ── Room Screen ──────────────────────────────────────────────────
-function RoomScreen({ room, onAddBox, onSelectBox, onBack }) {
+function RoomScreen({ room, onAddBox, onSelectBox, onBack, onRenameRoom }) {
   const boxes = room.boxes || []
   const usedCount = boxes.length
   const atLimit = usedCount >= 99
   const showWarning75 = usedCount >= 75 && usedCount < 90
   const showWarning90 = usedCount >= 90
+  const [editing, setEditing] = useState(false)
+  const [nameInput, setNameInput] = useState(room.name)
+
+  function handleRename() {
+    if (nameInput.trim() && nameInput.trim() !== room.name) {
+      onRenameRoom(room, nameInput.trim())
+    }
+    setEditing(false)
+  }
 
   return (
     <div className="screen">
       <div className="screen-header">
         <button className="btn-back" onClick={onBack}>← Back</button>
         <span className="color-dot lg" style={{ background: room.color, border: room.colorName === 'White' ? '2px solid #ccc' : 'none' }} />
-        <h2>{room.name}</h2>
+        {editing ? (
+          <>
+            <input
+              className="form-input"
+              style={{ flex: 1, padding: '6px 10px', fontSize: 16 }}
+              value={nameInput}
+              onChange={e => setNameInput(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && handleRename()}
+              autoFocus
+            />
+            <button className="btn-primary" style={{ padding: '6px 14px', fontSize: 13 }} onClick={handleRename}>Save</button>
+            <button className="btn-back" onClick={() => { setNameInput(room.name); setEditing(false) }}>Cancel</button>
+          </>
+        ) : (
+          <>
+            <h2>{room.name}</h2>
+            <button className="btn-edit-name" onClick={() => setEditing(true)} title="Rename room">✏️</button>
+          </>
+        )}
       </div>
 
       {showWarning90 && <div className="warning warning-red">⚠️ Almost full! {99 - usedCount} boxes left in this range.</div>}
@@ -639,6 +666,13 @@ function App({ session }) {
     setSelectedBox(updatedBox)
   }
 
+  async function handleRenameRoom(room, newName) {
+    await supabase.from('rooms').update({ name: newName }).eq('id', room.id)
+    const updatedRoom = { ...room, name: newName }
+    setRooms(prev => prev.map(r => r.id === room.id ? updatedRoom : r))
+    setSelectedRoom(updatedRoom)
+  }
+
   // Screen routing
   if (loading) return <div className="app"><div className="empty-state" style={{paddingTop:100}}>Loading your move...</div></div>
 
@@ -651,6 +685,7 @@ function App({ session }) {
       onAddBox={handleAddBox}
       onSelectBox={box => { setSelectedBox(box); setScreen('box') }}
       onBack={() => setScreen('home')}
+      onRenameRoom={handleRenameRoom}
     /></div>
   }
   if (screen === 'box') {

@@ -231,6 +231,20 @@ body {
   padding: 0;
 }
 
+.btn-edit-name {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 16px;
+  padding: 0 4px;
+  opacity: 0.5;
+  transition: opacity 0.15s;
+}
+
+.btn-edit-name:hover {
+  opacity: 1;
+}
+
 /* ── Form ── */
 .form-group {
   display: flex;
