@@ -118,6 +118,64 @@ body {
   color: #ef4444;
 }
 
+.move-name-row {
+  padding: 4px 0 8px;
+}
+.move-name-display {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.move-name-text {
+  font-size: 15px;
+  font-weight: 600;
+  color: #f9fafb;
+  letter-spacing: 0.01em;
+}
+.btn-edit-move-name {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  padding: 0;
+  opacity: 0.7;
+}
+.btn-edit-move-name:hover { opacity: 1; }
+.move-name-edit {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.move-name-input {
+  background: rgba(255,255,255,0.15);
+  border: 1px solid rgba(255,255,255,0.3);
+  border-radius: 6px;
+  color: #fff;
+  font-size: 14px;
+  padding: 4px 8px;
+  outline: none;
+  width: 200px;
+}
+.move-name-input::placeholder { color: rgba(255,255,255,0.5); }
+.btn-save-name {
+  background: #1D9E75;
+  border: none;
+  border-radius: 6px;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 4px 10px;
+  cursor: pointer;
+}
+.btn-cancel-name {
+  background: none;
+  border: none;
+  color: rgba(255,255,255,0.7);
+  font-size: 14px;
+  cursor: pointer;
+  padding: 0 4px;
+}
+
 .stats-row {
   display: flex;
   gap: 24px;

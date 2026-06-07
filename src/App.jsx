@@ -874,6 +874,9 @@ function App({ session }) {
   const [screen, setScreen] = useState('home')
   const [rooms, setRooms] = useState([])
   const [moveId, setMoveId] = useState(null)
+  const [moveName, setMoveName] = useState('')
+  const [editingMoveName, setEditingMoveName] = useState(false)
+  const [moveNameInput, setMoveNameInput] = useState('')
   const [selectedRoom, setSelectedRoom] = useState(null)
   const [selectedBox, setSelectedBox] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -947,6 +950,8 @@ function App({ session }) {
       setMoveId(move.id)
       setIsOwner(owner)
       setInviteCode(move.invite_code)
+      setMoveName(move.name || 'My Move')
+      setMoveNameInput(move.name || 'My Move')
 
       // Load members
       const { data: memberRows } = await supabase.from('move_members').select('*').eq('move_id', move.id)
@@ -1125,6 +1130,14 @@ function App({ session }) {
     /></div>
   }
 
+  async function handleSaveMoveName() {
+    const finalName = moveNameInput.trim() || 'My Move'
+    await supabase.from('moves').update({ name: finalName }).eq('id', moveId)
+    setMoveName(finalName)
+    setMoveNameInput(finalName)
+    setEditingMoveName(false)
+  }
+
   return (
     <div className="app">
       {scanning && <Scanner rooms={rooms} onClose={() => setScanning(false)} />}
@@ -1137,6 +1150,26 @@ function App({ session }) {
             <button className="btn-scan" onClick={() => setScanning(true)}>📷 Scan</button>
             <button className="btn-signout" onClick={() => supabase.auth.signOut()}>Sign out</button>
           </div>
+        </div>
+        <div className="move-name-row">
+          {editingMoveName ? (
+            <div className="move-name-edit">
+              <input
+                className="move-name-input"
+                value={moveNameInput}
+                onChange={e => setMoveNameInput(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Enter') handleSaveMoveName(); if (e.key === 'Escape') { setMoveNameInput(moveName); setEditingMoveName(false) } }}
+                autoFocus
+              />
+              <button className="btn-save-name" onClick={handleSaveMoveName}>Save</button>
+              <button className="btn-cancel-name" onClick={() => { setMoveNameInput(moveName); setEditingMoveName(false) }}>✕</button>
+            </div>
+          ) : (
+            <div className="move-name-display">
+              <span className="move-name-text">{moveName}</span>
+              {isOwner && <button className="btn-edit-move-name" onClick={() => setEditingMoveName(true)}>✏️</button>}
+            </div>
+          )}
         </div>
         <div className="stats-row">
           <div className="stat">
