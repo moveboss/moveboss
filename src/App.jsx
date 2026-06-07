@@ -160,7 +160,7 @@ function AddRoomScreen({ rooms, onSave, onCancel }) {
 }
 
 // ── Box Screen ───────────────────────────────────────────────────
-function BoxScreen({ box, room, onUpdate, onBack, onDelete }) {
+function BoxScreen({ box, room, isOwner, session, onUpdate, onBack, onDelete }) {
   const [itemInput, setItemInput] = useState('')
   const [qrDataUrl, setQrDataUrl] = useState(null)
   const [confirmDelete, setConfirmDelete] = useState(false)
@@ -390,15 +390,17 @@ function BoxScreen({ box, room, onUpdate, onBack, onDelete }) {
         />
       )}
 
-      <button className="btn-delete" onClick={() => setConfirmDelete(true)}>
-        🗑 Delete Box
-      </button>
+      {(isOwner || room.assignedTo === session?.user?.id) && (
+        <button className="btn-delete" onClick={() => setConfirmDelete(true)}>
+          🗑 Delete Box
+        </button>
+      )}
     </div>
   )
 }
 
 // ── Room Screen ──────────────────────────────────────────────────
-function RoomScreen({ room, rooms, onAddBox, onSelectBox, onBack, onRenameRoom, onRecolorRoom, onDeleteRoom }) {
+function RoomScreen({ room, rooms, members, isOwner, session, onAddBox, onSelectBox, onBack, onRenameRoom, onRecolorRoom, onDeleteRoom, onAssignRoom }) {
   const boxes = room.boxes || []
   const usedCount = boxes.length
   const atLimit = usedCount >= 99
@@ -495,6 +497,29 @@ function RoomScreen({ room, rooms, onAddBox, onSelectBox, onBack, onRenameRoom, 
         + Add New Box
       </button>
 
+      {/* Assign room — owner only */}
+      {isOwner && members.length > 0 && (
+        <div className="form-group">
+          <label className="form-label">Assigned Packer</label>
+          <select
+            className="form-input"
+            value={room.assignedTo || ''}
+            onChange={e => onAssignRoom(room, e.target.value || null)}
+          >
+            <option value="">Unassigned</option>
+            {members.map(m => (
+              <option key={m.user_id} value={m.user_id}>{m.email}</option>
+            ))}
+          </select>
+        </div>
+      )}
+
+      {room.assignedTo && !isOwner && (
+        <div className="assigned-badge">
+          👤 {room.assignedTo === session.user.id ? 'This is your room' : 'Assigned to another packer'}
+        </div>
+      )}
+
       {confirmDelete && (
         <DeleteConfirm
           title="Delete Room"
@@ -504,15 +529,17 @@ function RoomScreen({ room, rooms, onAddBox, onSelectBox, onBack, onRenameRoom, 
         />
       )}
 
-      <button className="btn-delete" onClick={() => setConfirmDelete(true)}>
-        🗑 Delete Room
-      </button>
+      {isOwner && (
+        <button className="btn-delete" onClick={() => setConfirmDelete(true)}>
+          🗑 Delete Room
+        </button>
+      )}
     </div>
   )
 }
 
 // ── Rooms Tab ────────────────────────────────────────────────────
-function RoomsTab({ rooms, onAddRoom, onSelectRoom }) {
+function RoomsTab({ rooms, members, onAddRoom, onSelectRoom }) {
   if (rooms.length === 0) {
     return (
       <div className="empty-state">
@@ -530,7 +557,7 @@ function RoomsTab({ rooms, onAddRoom, onSelectRoom }) {
             <div className="room-card-body">
               <span className="room-card-name">{room.name}</span>
               <span className="room-card-meta">{room.startNum}–{room.startNum + 99}</span>
-              <span className="room-card-boxes">{room.boxes.length} boxes</span>
+              <span className="room-card-boxes">{room.boxes.length} boxes{room.assignedTo ? ` · 👤 ${members.find(m => m.user_id === room.assignedTo)?.email?.split('@')[0] || 'assigned'}` : ''}</span>
             </div>
             <span className="room-card-arrow">›</span>
           </div>
@@ -830,8 +857,7 @@ function App({ session }) {
       setInviteCode(move.invite_code)
 
       // Load members
-      const { data: memberRows, error: membersError } = await supabase.from('move_members').select('*').eq('move_id', move.id)
-      console.log('move.id:', move.id, 'memberRows:', memberRows, 'error:', membersError)
+      const { data: memberRows } = await supabase.from('move_members').select('*').eq('move_id', move.id)
       setMembers(memberRows || [])
 
       // Load rooms
@@ -847,6 +873,7 @@ function App({ session }) {
         colorShort: r.color_short,
         startNum: r.start_num,
         nextNum: r.next_num,
+        assignedTo: r.assigned_to,
         boxes: (boxRows || []).filter(b => b.room_id === r.id).map(b => ({
           id: b.id,
           num: b.num,
@@ -962,6 +989,13 @@ function App({ session }) {
     setSelectedRoom(updatedRoom)
   }
 
+  async function handleAssignRoom(room, userId) {
+    await supabase.from('rooms').update({ assigned_to: userId || null }).eq('id', room.id)
+    const updatedRoom = { ...room, assignedTo: userId || null }
+    setRooms(prev => prev.map(r => r.id === room.id ? updatedRoom : r))
+    setSelectedRoom(updatedRoom)
+  }
+
   // Screen routing
   if (loading) return <div className="app"><div className="empty-state" style={{paddingTop:100}}>Loading your move...</div></div>
 
@@ -972,18 +1006,24 @@ function App({ session }) {
     return <div className="app"><RoomScreen
       room={selectedRoom}
       rooms={rooms}
+      members={members}
+      isOwner={isOwner}
+      session={session}
       onAddBox={handleAddBox}
       onSelectBox={box => { setSelectedBox(box); setScreen('box') }}
       onBack={() => setScreen('home')}
       onRenameRoom={handleRenameRoom}
       onRecolorRoom={handleRecolorRoom}
       onDeleteRoom={handleDeleteRoom}
+      onAssignRoom={handleAssignRoom}
     /></div>
   }
   if (screen === 'box') {
     return <div className="app"><BoxScreen
       box={selectedBox}
       room={selectedRoom}
+      isOwner={isOwner}
+      session={session}
       onUpdate={handleUpdateBox}
       onBack={() => setScreen('room')}
       onDelete={handleDeleteBox}
@@ -1034,6 +1074,7 @@ function App({ session }) {
         {activeTab === 'Rooms' && (
           <RoomsTab
             rooms={rooms}
+            members={members}
             onAddRoom={() => setScreen('addRoom')}
             onSelectRoom={room => { setSelectedRoom(room); setScreen('room') }}
           />

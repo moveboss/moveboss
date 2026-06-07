@@ -841,6 +841,17 @@ body {
   align-self: flex-start;
 }
 
+/* ── Assigned badge ── */
+.assigned-badge {
+  background: #f0fdf8;
+  border: 1px solid #1D9E75;
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #1D9E75;
+}
+
 /* ── Private boxes ── */
 .private-box-card {
   display: flex;
