@@ -788,10 +788,24 @@ function App({ session }) {
           move = sharedMove
           owner = false
         } else {
-          // Create new move for this user
-          const { data, error } = await supabase.from('moves').insert({ name: 'My Move', owner_id: session.user.id }).select().single()
-          if (error) throw error
-          move = data
+          // Check localStorage for a join code entered on the login screen
+          const pendingCode = localStorage.getItem('mb_join_code')
+          if (pendingCode) {
+            const { data: joinMove } = await supabase.from('moves').select('*').eq('invite_code', pendingCode).single()
+            if (joinMove) {
+              await supabase.from('move_members').insert({ move_id: joinMove.id, user_id: session.user.id, email: session.user.email })
+              localStorage.removeItem('mb_join_code')
+              move = joinMove
+              owner = false
+            }
+          }
+          // If still no move, create a new one
+          if (!move) {
+            localStorage.removeItem('mb_join_code')
+            const { data, error } = await supabase.from('moves').insert({ name: 'My Move', owner_id: session.user.id }).select().single()
+            if (error) throw error
+            move = data
+          }
         }
       }
 
