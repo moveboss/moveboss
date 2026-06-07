@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { supabase } from './supabase'
 
-export default function Auth() {
+export default function Auth({ joinCode }) {
   const [mode, setMode] = useState('login') // 'login' | 'signup'
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -34,6 +34,11 @@ export default function Auth() {
           <span className="logo-move">Move</span><span className="logo-boss">Boss</span>
         </h1>
         <p className="auth-tagline">Moving made organized.</p>
+        {joinCode && (
+          <div className="form-success" style={{ textAlign: 'center', maxWidth: 360, width: '100%' }}>
+            📦 You've been invited to help with a move! Sign in or create an account to join.
+          </div>
+        )}
 
         <form className="auth-form" onSubmit={handleSubmit}>
           <h2 className="auth-title">{mode === 'login' ? 'Sign In' : 'Create Account'}</h2>

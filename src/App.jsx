@@ -455,6 +455,70 @@ function RoomsTab({ rooms, onAddRoom, onSelectRoom }) {
   )
 }
 
+// ── Packers Tab ──────────────────────────────────────────────────
+function PackersTab({ inviteCode, members, isOwner, ownerEmail }) {
+  const [copied, setCopied] = useState(false)
+  const inviteLink = `${window.location.origin}?join=${inviteCode}`
+
+  function copyLink() {
+    navigator.clipboard.writeText(inviteLink)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
+
+  if (!isOwner) {
+    return (
+      <div className="empty-state">
+        <p>You're packing for someone else's move.</p>
+      </div>
+    )
+  }
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+      <div className="report-card">
+        <div className="report-card-title">🔗 Invite Link</div>
+        <p style={{ fontSize: 13, color: '#6b7280', marginTop: 6 }}>
+          Share this link with anyone you want to help pack. They'll create a free account and land straight in your move.
+        </p>
+        <div className="invite-link-box">
+          <span className="invite-link-text">{inviteLink}</span>
+          <button className="btn-copy" onClick={copyLink}>
+            {copied ? '✓ Copied!' : 'Copy'}
+          </button>
+        </div>
+      </div>
+
+      <div className="report-card">
+        <div className="report-card-title">👥 Packers ({members.length})</div>
+        {members.length === 0
+          ? <p style={{ fontSize: 13, color: '#9ca3af', marginTop: 8 }}>No one has joined yet. Share the invite link above!</p>
+          : (
+            <ul style={{ listStyle: 'none', marginTop: 12, display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {members.map(m => (
+                <li key={m.id} className="member-row">
+                  <span className="member-avatar">{(m.email||'?')[0].toUpperCase()}</span>
+                  <span className="member-email">{m.email}</span>
+                  <span className="badge badge-packing">{m.role}</span>
+                </li>
+              ))}
+            </ul>
+          )
+        }
+      </div>
+
+      <div className="report-card">
+        <div className="report-card-title">👑 Move Owner</div>
+        <div className="member-row" style={{ marginTop: 8 }}>
+          <span className="member-avatar">{ownerEmail[0].toUpperCase()}</span>
+          <span className="member-email">{ownerEmail}</span>
+          <span className="badge badge-complete">owner</span>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ── Reports Tab ──────────────────────────────────────────────────
 function ReportsTab({ rooms }) {
   const totalBoxes = rooms.reduce((sum, r) => sum + r.boxes.length, 0)
@@ -606,6 +670,9 @@ function App({ session }) {
   const [selectedBox, setSelectedBox] = useState(null)
   const [loading, setLoading] = useState(true)
   const [scanning, setScanning] = useState(false)
+  const [inviteCode, setInviteCode] = useState(null)
+  const [members, setMembers] = useState([])
+  const [isOwner, setIsOwner] = useState(true)
 
   const totalBoxes = rooms.reduce((sum, r) => sum + r.boxes.length, 0)
   const totalItems = rooms.reduce((sum, r) => sum + r.boxes.reduce((s, b) => s + (b.items||[]).length, 0), 0)
@@ -618,23 +685,36 @@ function App({ session }) {
   async function loadData() {
     setLoading(true)
     try {
-      // Get or create the move for this user
-      let { data: moves, error: movesError } = await supabase.from('moves').select('*').eq('owner_id', session.user.id)
-      if (movesError) throw movesError
+      // Check if user owns a move
+      let { data: ownedMoves } = await supabase.from('moves').select('*').eq('owner_id', session.user.id)
+      let move = ownedMoves?.[0]
+      let owner = true
 
-      let move = moves?.[0]
       if (!move) {
-        const { data, error } = await supabase.from('moves').insert({ name: 'My Move', owner_id: session.user.id }).select().single()
-        if (error) throw error
-        move = data
+        // Check if user is a packer on someone else's move
+        const { data: membership } = await supabase.from('move_members').select('move_id').eq('user_id', session.user.id).single()
+        if (membership) {
+          const { data: sharedMove } = await supabase.from('moves').select('*').eq('id', membership.move_id).single()
+          move = sharedMove
+          owner = false
+        } else {
+          // Create new move for this user
+          const { data, error } = await supabase.from('moves').insert({ name: 'My Move', owner_id: session.user.id }).select().single()
+          if (error) throw error
+          move = data
+        }
       }
+
       setMoveId(move.id)
+      setIsOwner(owner)
+      setInviteCode(move.invite_code)
+
+      // Load members
+      const { data: memberRows } = await supabase.from('move_members').select('*').eq('move_id', move.id)
+      setMembers(memberRows || [])
 
       // Load rooms
-      const { data: roomRows, error: roomsError } = await supabase.from('rooms').select('*').eq('move_id', move.id)
-      if (roomsError) throw roomsError
-
-      // Load boxes and items
+      const { data: roomRows } = await supabase.from('rooms').select('*').eq('move_id', move.id)
       const { data: boxRows } = await supabase.from('boxes').select('*').eq('move_id', move.id)
       const { data: itemRows } = await supabase.from('items').select('*')
 
@@ -852,10 +932,12 @@ function App({ session }) {
             )
         )}
         {activeTab === 'Packers' && (
-          <div className="empty-state">
-            <p>No packers yet.</p>
-            <button className="btn-primary">+ Add Packer</button>
-          </div>
+          <PackersTab
+            inviteCode={inviteCode}
+            members={members}
+            isOwner={isOwner}
+            ownerEmail={session.user.email}
+          />
         )}
         {activeTab === 'Reports' && (
           <ReportsTab rooms={rooms} />

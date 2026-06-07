@@ -841,6 +841,66 @@ body {
   align-self: flex-start;
 }
 
+/* ── Packers ── */
+.invite-link-box {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #f9fafb;
+  border: 1px solid #e5e5e5;
+  border-radius: 8px;
+  padding: 10px 12px;
+  margin-top: 12px;
+}
+
+.invite-link-text {
+  flex: 1;
+  font-size: 12px;
+  color: #374151;
+  word-break: break-all;
+  font-family: monospace;
+}
+
+.btn-copy {
+  background: #1D9E75;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 6px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.member-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 0;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.member-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #1D9E75;
+  color: #fff;
+  font-weight: 700;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.member-email {
+  flex: 1;
+  font-size: 14px;
+  color: #374151;
+}
+
 /* ── Reports ── */
 .report-card {
   background: #fff;
