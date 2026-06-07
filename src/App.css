@@ -841,6 +841,61 @@ body {
   align-self: flex-start;
 }
 
+/* ── Private boxes ── */
+.private-box-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  background: #fafafa;
+  border: 1.5px solid #e5e5e5;
+  border-radius: 12px;
+  padding: 24px 20px;
+}
+
+.private-box-icon {
+  font-size: 36px;
+}
+
+.private-box-label {
+  font-size: 16px;
+  font-weight: 700;
+  color: #1a1a1a;
+}
+
+.private-box-hint {
+  font-size: 13px;
+  color: #6b7280;
+  margin-top: -4px;
+}
+
+.pin-row {
+  display: flex;
+  gap: 10px;
+  width: 100%;
+}
+
+.pin-input {
+  flex: 1;
+  letter-spacing: 4px;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.private-toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 4px 0;
+}
+
+.private-badge {
+  font-size: 13px;
+  font-weight: 600;
+  color: #374151;
+}
+
 /* ── Packers ── */
 .invite-link-box {
   display: flex;

@@ -164,10 +164,18 @@ function BoxScreen({ box, room, onUpdate, onBack, onDelete }) {
   const [itemInput, setItemInput] = useState('')
   const [qrDataUrl, setQrDataUrl] = useState(null)
   const [confirmDelete, setConfirmDelete] = useState(false)
+  const [pinInput, setPinInput] = useState('')
+  const [pinError, setPinError] = useState('')
+  const [unlocked, setUnlocked] = useState(false)
+  const [settingPin, setSettingPin] = useState(false)
+  const [newPin, setNewPin] = useState('')
+  const [newPinConfirm, setNewPinConfirm] = useState('')
+  const [pinSetError, setPinSetError] = useState('')
   const canvasRef = useRef(null)
 
   const boxedItems = box.items || []
   const isComplete = box.complete
+  const isPrivate = box.isPrivate
 
   function addItem() {
     const val = itemInput.trim()
@@ -192,6 +200,32 @@ function BoxScreen({ box, room, onUpdate, onBack, onDelete }) {
   function reopenBox() {
     setQrDataUrl(null)
     onUpdate({ ...box, complete: false, qrDataUrl: null })
+  }
+
+  function handleUnlock() {
+    if (pinInput === box.pin) {
+      setUnlocked(true)
+      setPinError('')
+    } else {
+      setPinError('Incorrect PIN. Try again.')
+      setPinInput('')
+    }
+  }
+
+  function handleSetPin() {
+    if (newPin.length < 4) { setPinSetError('PIN must be at least 4 digits.'); return }
+    if (newPin !== newPinConfirm) { setPinSetError('PINs don\'t match.'); return }
+    onUpdate({ ...box, isPrivate: true, pin: newPin })
+    setSettingPin(false)
+    setNewPin('')
+    setNewPinConfirm('')
+    setPinSetError('')
+    setUnlocked(true)
+  }
+
+  function handleRemovePrivate() {
+    onUpdate({ ...box, isPrivate: false, pin: null })
+    setUnlocked(false)
   }
 
   function printLabel() {
@@ -238,7 +272,57 @@ function BoxScreen({ box, room, onUpdate, onBack, onDelete }) {
       {showWarning90 && <div className="warning warning-red">⚠️ Almost full! Only {99 - usedCount} boxes left in this range.</div>}
       {showWarning75 && !showWarning90 && <div className="warning warning-amber">📦 {usedCount} of 99 boxes used in this range.</div>}
 
-      {!isComplete && (
+      {/* Private box — locked state */}
+      {isPrivate && !unlocked && (
+        <div className="private-box-card">
+          <div className="private-box-icon">🔒</div>
+          <div className="private-box-label">This box is private</div>
+          <p className="private-box-hint">Enter the PIN to view contents</p>
+          <div className="pin-row">
+            <input
+              className="form-input pin-input"
+              type="number"
+              placeholder="PIN"
+              value={pinInput}
+              onChange={e => setPinInput(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && handleUnlock()}
+            />
+            <button className="btn-primary" onClick={handleUnlock}>Unlock</button>
+          </div>
+          {pinError && <p className="form-error">{pinError}</p>}
+        </div>
+      )}
+
+      {/* Set PIN modal */}
+      {settingPin && (
+        <div className="private-box-card">
+          <div className="private-box-label">🔒 Set a PIN for this box</div>
+          <div className="form-group" style={{ width: '100%' }}>
+            <input className="form-input" type="number" placeholder="Choose a PIN (4+ digits)" value={newPin} onChange={e => setNewPin(e.target.value)} />
+            <input className="form-input" type="number" placeholder="Confirm PIN" value={newPinConfirm} onChange={e => setNewPinConfirm(e.target.value)} />
+          </div>
+          {pinSetError && <p className="form-error">{pinSetError}</p>}
+          <div style={{ display: 'flex', gap: 10, width: '100%' }}>
+            <button className="btn-cancel-modal" style={{ flex: 1 }} onClick={() => setSettingPin(false)}>Cancel</button>
+            <button className="btn-primary" style={{ flex: 1 }} onClick={handleSetPin}>Set PIN</button>
+          </div>
+        </div>
+      )}
+
+      {/* Private toggle */}
+      {(!isPrivate || unlocked) && !settingPin && (
+        <div className="private-toggle-row">
+          {isPrivate
+            ? <>
+                <span className="private-badge">🔒 Private box</span>
+                <button className="btn-link" onClick={handleRemovePrivate}>Remove lock</button>
+              </>
+            : <button className="btn-link" style={{ fontSize: 13 }} onClick={() => setSettingPin(true)}>🔒 Make this box private</button>
+          }
+        </div>
+      )}
+
+      {!isComplete && (!isPrivate || unlocked) && (
         <div className="form-group">
           <label className="form-label">Add Item</label>
           <div className="item-input-row">
@@ -254,26 +338,28 @@ function BoxScreen({ box, room, onUpdate, onBack, onDelete }) {
         </div>
       )}
 
-      <div className="form-group">
-        <label className="form-label">Items ({boxedItems.length})</label>
-        {boxedItems.length === 0
-          ? <p className="empty-hint">No items yet. Add something above.</p>
-          : (
-            <ul className="item-list">
-              {boxedItems.map(item => (
-                <li key={item.id} className="item-row">
-                  <span>{item.name}</span>
-                  {!isComplete && (
-                    <button className="btn-remove" onClick={() => removeItem(item.id)}>✕</button>
-                  )}
-                </li>
-              ))}
-            </ul>
-          )
-        }
-      </div>
+      {(!isPrivate || unlocked) && (
+        <div className="form-group">
+          <label className="form-label">Items ({boxedItems.length})</label>
+          {boxedItems.length === 0
+            ? <p className="empty-hint">No items yet. Add something above.</p>
+            : (
+              <ul className="item-list">
+                {boxedItems.map(item => (
+                  <li key={item.id} className="item-row">
+                    <span>{item.name}</span>
+                    {!isComplete && (
+                      <button className="btn-remove" onClick={() => removeItem(item.id)}>✕</button>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            )
+          }
+        </div>
+      )}
 
-      {!isComplete && (
+      {!isComplete && (!isPrivate || unlocked) && (
         <button
           className="btn-primary btn-full"
           onClick={completeBox}
@@ -284,7 +370,7 @@ function BoxScreen({ box, room, onUpdate, onBack, onDelete }) {
         </button>
       )}
 
-      {isComplete && (
+      {isComplete && (!isPrivate || unlocked) && (
         <div className="qr-section">
           <img src={box.qrDataUrl} alt="QR Code" className="qr-image" />
           <div className="qr-actions">
@@ -389,8 +475,8 @@ function RoomScreen({ room, rooms, onAddBox, onSelectBox, onBack, onRenameRoom, 
           <ul className="box-list">
             {boxes.map(box => (
               <li key={box.id} className="box-row" onClick={() => onSelectBox(box)}>
-                <span className="box-code">{box.code}</span>
-                <span className="box-item-count">{(box.items||[]).length} items</span>
+                <span className="box-code">{box.code} {box.isPrivate ? '🔒' : ''}</span>
+                <span className="box-item-count">{box.isPrivate ? '••••' : `${(box.items||[]).length} items`}</span>
                 <span className={`badge ${box.complete ? 'badge-complete' : 'badge-packing'}`}>
                   {box.complete ? 'Packed ✓' : 'Packing'}
                 </span>
@@ -732,6 +818,8 @@ function App({ session }) {
           code: b.code,
           complete: b.complete,
           qrDataUrl: b.qr_data_url,
+          isPrivate: b.is_private,
+          pin: b.pin,
           items: (itemRows || []).filter(i => i.box_id === b.id).map(i => ({ id: i.id, name: i.name }))
         }))
       }))
@@ -786,6 +874,8 @@ function App({ session }) {
     await supabase.from('boxes').update({
       complete: updatedBox.complete,
       qr_data_url: updatedBox.qrDataUrl,
+      is_private: updatedBox.isPrivate || false,
+      pin: updatedBox.pin || null,
     }).eq('id', updatedBox.id)
 
     // Sync items — delete all and re-insert
