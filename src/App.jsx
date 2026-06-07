@@ -888,10 +888,46 @@ function App({ session }) {
   const totalBoxes = rooms.reduce((sum, r) => sum + r.boxes.length, 0)
   const totalItems = rooms.reduce((sum, r) => sum + r.boxes.reduce((s, b) => s + (b.items||[]).length, 0), 0)
 
-  // Load data from Supabase on mount
+  // Load data from Supabase on mount, then subscribe to real-time changes
   useEffect(() => {
     loadData()
   }, [])
+
+  // Set up real-time subscriptions once we have a moveId
+  useEffect(() => {
+    if (!moveId) return
+
+    const channel = supabase
+      .channel(`move-${moveId}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'rooms', filter: `move_id=eq.${moveId}` }, () => reloadRooms(moveId))
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'boxes', filter: `move_id=eq.${moveId}` }, () => reloadRooms(moveId))
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'items' }, () => reloadRooms(moveId))
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'move_members', filter: `move_id=eq.${moveId}` }, () => reloadMembers(moveId))
+      .subscribe()
+
+    return () => { supabase.removeChannel(channel) }
+  }, [moveId])
+
+  async function reloadRooms(mid) {
+    const { data: roomRows } = await supabase.from('rooms').select('*').eq('move_id', mid)
+    const { data: boxRows } = await supabase.from('boxes').select('*').eq('move_id', mid)
+    const { data: itemRows } = await supabase.from('items').select('*')
+    const loadedRooms = (roomRows || []).map(r => ({
+      id: r.id, name: r.name, color: r.color, colorName: r.color_name, colorShort: r.color_short,
+      startNum: r.start_num, nextNum: r.next_num, assignedTo: r.assigned_to,
+      boxes: (boxRows || []).filter(b => b.room_id === r.id).map(b => ({
+        id: b.id, num: b.num, code: b.code, complete: b.complete, qrDataUrl: b.qr_data_url,
+        isPrivate: b.is_private, pin: b.pin,
+        items: (itemRows || []).filter(i => i.box_id === b.id).map(i => ({ id: i.id, name: i.name }))
+      }))
+    }))
+    setRooms(loadedRooms)
+  }
+
+  async function reloadMembers(mid) {
+    const { data: memberRows } = await supabase.from('move_members').select('*').eq('move_id', mid)
+    setMembers(memberRows || [])
+  }
 
   async function loadData() {
     setLoading(true)
