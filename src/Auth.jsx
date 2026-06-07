@@ -95,7 +95,7 @@ export default function Auth({ joinCode }) {
 
         <p className="auth-switch">
           {mode === 'login' ? (
-            <>Don't have an account? <button className="btn-link" onClick={() => setMode('signup')}>Sign up</button></>
+            <>Don't have an account? <button className="btn-link" onClick={() => setMode('signup')}>Create Account</button></>
           ) : (
             <>Already have an account? <button className="btn-link" onClick={() => setMode('login')}>Sign in</button></>
           )}
