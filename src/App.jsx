@@ -543,12 +543,12 @@ function RoomScreen({ room, rooms, members, isOwner, session, onAddBox, onSelect
 }
 
 // ── Rooms Tab ────────────────────────────────────────────────────
-function RoomsTab({ rooms, members, onAddRoom, onSelectRoom }) {
+function RoomsTab({ rooms, members, isOwner, onAddRoom, onSelectRoom }) {
   if (rooms.length === 0) {
     return (
       <div className="empty-state">
         <p>No rooms yet.</p>
-        <button className="btn-primary" onClick={onAddRoom}>+ Add Room</button>
+        {isOwner && <button className="btn-primary" onClick={onAddRoom}>+ Add Room</button>}
       </div>
     )
   }
@@ -567,7 +567,7 @@ function RoomsTab({ rooms, members, onAddRoom, onSelectRoom }) {
           </div>
         ))}
       </div>
-      <button className="btn-primary btn-full" style={{ marginTop: 20 }} onClick={onAddRoom}>+ Add Room</button>
+      {isOwner && <button className="btn-primary btn-full" style={{ marginTop: 20 }} onClick={onAddRoom}>+ Add Room</button>}
     </div>
   )
 }
@@ -1082,6 +1082,7 @@ function App({ session }) {
           <RoomsTab
             rooms={rooms}
             members={members}
+            isOwner={isOwner}
             onAddRoom={() => setScreen('addRoom')}
             onSelectRoom={room => { setSelectedRoom(room); setScreen('room') }}
           />
