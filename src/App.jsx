@@ -544,7 +544,7 @@ function RoomsTab({ rooms, onAddRoom, onSelectRoom }) {
 // ── Packers Tab ──────────────────────────────────────────────────
 function PackersTab({ inviteCode, members, isOwner, ownerEmail }) {
   const [copied, setCopied] = useState(false)
-  const inviteLink = `${window.location.origin}?join=${inviteCode}`
+  const inviteLink = `${window.location.origin}/?join=${inviteCode}`
 
   function copyLink() {
     navigator.clipboard.writeText(inviteLink)
@@ -563,14 +563,18 @@ function PackersTab({ inviteCode, members, isOwner, ownerEmail }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
       <div className="report-card">
-        <div className="report-card-title">🔗 Invite Link</div>
+        <div className="report-card-title">🔗 Invite Packers</div>
         <p style={{ fontSize: 13, color: '#6b7280', marginTop: 6 }}>
-          Share this link with anyone you want to help pack. They'll create a free account and land straight in your move.
+          Share your join code or link. Helpers go to <strong>moveboss.vercel.app</strong>, create an account, and enter the code below.
         </p>
-        <div className="invite-link-box">
+        <div className="invite-code-display">
+          <span className="invite-code-text">{inviteCode}</span>
+        </div>
+        <p style={{ fontSize: 12, color: '#9ca3af', textAlign: 'center' }}>Your join code — share this with packers</p>
+        <div className="invite-link-box" style={{ marginTop: 8 }}>
           <span className="invite-link-text">{inviteLink}</span>
           <button className="btn-copy" onClick={copyLink}>
-            {copied ? '✓ Copied!' : 'Copy'}
+            {copied ? '✓ Copied!' : 'Copy Link'}
           </button>
         </div>
       </div>

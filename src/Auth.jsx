@@ -5,9 +5,12 @@ export default function Auth({ joinCode }) {
   const [mode, setMode] = useState('login') // 'login' | 'signup'
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [manualCode, setManualCode] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [message, setMessage] = useState('')
+
+  const effectiveCode = joinCode || manualCode.trim() || null
 
   async function handleSubmit(e) {
     e.preventDefault()
@@ -16,12 +19,22 @@ export default function Auth({ joinCode }) {
     setLoading(true)
 
     if (mode === 'signup') {
-      const { error } = await supabase.auth.signUp({ email, password })
-      if (error) setError(error.message)
-      else setMessage('Check your email for a confirmation link!')
+      const { data, error } = await supabase.auth.signUp({ email, password })
+      if (error) { setError(error.message); setLoading(false); return }
+      // If we have a join code, link them now
+      if (effectiveCode && data?.user) {
+        const { data: move } = await supabase.from('moves').select('id').eq('invite_code', effectiveCode).single()
+        if (move) await supabase.from('move_members').insert({ move_id: move.id, user_id: data.user.id, email })
+      }
+      setMessage('Account created! Signing you in...')
     } else {
-      const { error } = await supabase.auth.signInWithPassword({ email, password })
-      if (error) setError(error.message)
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password })
+      if (error) { setError(error.message); setLoading(false); return }
+      // If we have a join code, link them on sign in too
+      if (effectiveCode && data?.user) {
+        const { data: move } = await supabase.from('moves').select('id').eq('invite_code', effectiveCode).single()
+        if (move) await supabase.from('move_members').insert({ move_id: move.id, user_id: data.user.id, email }).select()
+      }
     }
 
     setLoading(false)
@@ -66,6 +79,18 @@ export default function Auth({ joinCode }) {
               required
             />
           </div>
+
+          {!joinCode && (
+            <div className="form-group">
+              <label className="form-label">Join Code <span style={{fontWeight:400, color:'#9ca3af'}}>(optional — if someone invited you)</span></label>
+              <input
+                className="form-input"
+                placeholder="e.g. fde893a7"
+                value={manualCode}
+                onChange={e => setManualCode(e.target.value)}
+              />
+            </div>
+          )}
 
           {error && <p className="form-error">{error}</p>}
           {message && <p className="form-success">{message}</p>}

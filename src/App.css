@@ -897,6 +897,24 @@ body {
 }
 
 /* ── Packers ── */
+.invite-code-display {
+  display: flex;
+  justify-content: center;
+  margin: 12px 0 4px;
+}
+
+.invite-code-text {
+  font-size: 28px;
+  font-weight: 800;
+  letter-spacing: 4px;
+  color: #1D9E75;
+  font-family: monospace;
+  background: #f0fdf8;
+  border: 2px solid #1D9E75;
+  border-radius: 10px;
+  padding: 10px 20px;
+}
+
 .invite-link-box {
   display: flex;
   align-items: center;
