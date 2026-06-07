@@ -912,7 +912,12 @@ function App({ session }) {
 
   async function handleAddBox() {
     const room = selectedRoom
-    const num = room.nextNum
+    // Find lowest available number in this room's range
+    const usedNums = new Set(room.boxes.map(b => b.num))
+    let num = room.startNum
+    while (usedNums.has(num) && num < room.startNum + 99) num++
+    if (num >= room.startNum + 99) return // room full
+
     const code = `${room.name.toUpperCase()}-${num}`
     const { data } = await supabase.from('boxes').insert({
       room_id: room.id,
@@ -921,10 +926,8 @@ function App({ session }) {
       code,
       complete: false,
     }).select().single()
-    // Update next_num in DB
-    await supabase.from('rooms').update({ next_num: num + 1 }).eq('id', room.id)
     const newBox = { id: data.id, num, code, items: [], complete: false, qrDataUrl: null }
-    const updatedRoom = { ...room, nextNum: num + 1, boxes: [...room.boxes, newBox] }
+    const updatedRoom = { ...room, boxes: [...room.boxes, newBox] }
     setRooms(prev => prev.map(r => r.id === room.id ? updatedRoom : r))
     setSelectedRoom(updatedRoom)
     setSelectedBox(newBox)
