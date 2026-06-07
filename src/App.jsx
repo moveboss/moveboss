@@ -725,7 +725,7 @@ function PackersTab({ inviteCode, members, setMembers, isOwner }) {
 }
 
 // ── Reports Tab ──────────────────────────────────────────────────
-function ReportsTab({ rooms }) {
+function ReportsTab({ rooms, onShowReady }) {
   const totalBoxes = rooms.reduce((sum, r) => sum + r.boxes.length, 0)
   const totalItems = rooms.reduce((sum, r) => sum + r.boxes.reduce((s, b) => s + (b.items||[]).length, 0), 0)
   const packedBoxes = rooms.reduce((sum, r) => sum + r.boxes.filter(b => b.complete).length, 0)
@@ -818,6 +818,11 @@ function ReportsTab({ rooms }) {
           {packedBoxes} of {totalBoxes} boxes packed
           {totalBoxes > 0 && <span className="progress-pct"> · {Math.round(packedBoxes/totalBoxes*100)}%</span>}
         </div>
+        {totalBoxes > 0 && packedBoxes === totalBoxes && (
+          <button className="btn-ready-trigger" onClick={onShowReady}>
+            🚛 Ready for the Road!
+          </button>
+        )}
       </div>
 
       {/* Room breakdown */}
@@ -1344,7 +1349,7 @@ function App({ session }) {
           />
         )}
         {activeTab === 'Reports' && (
-          <ReportsTab rooms={rooms} />
+          <ReportsTab rooms={rooms} onShowReady={() => setShowReadyModal(true)} />
         )}
       </main>
     </div>
