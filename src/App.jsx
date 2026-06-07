@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import confetti from 'canvas-confetti'
 import QRCode from 'qrcode'
 import { supabase } from './supabase'
 import Scanner from './Scanner'
@@ -195,11 +196,15 @@ function BoxScreen({ box, room, isOwner, session, onUpdate, onBack, onDelete }) 
     const url = await QRCode.toDataURL(qrText, { width: 256, margin: 2 })
     setQrDataUrl(url)
     onUpdate({ ...box, complete: true, qrDataUrl: url })
+    confetti({ particleCount: 120, spread: 80, origin: { y: 0.6 } })
   }
 
   function reopenBox() {
     setQrDataUrl(null)
     onUpdate({ ...box, complete: false, qrDataUrl: null })
+    confetti({ particleCount: 40, spread: 60, origin: { y: 0.6 },
+      colors: ['#9ca3af', '#6b7280', '#d1d5db'],
+      scalar: 0.7, ticks: 40, gravity: 2, drift: 0 })
   }
 
   function handleUnlock() {
