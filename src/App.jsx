@@ -440,8 +440,12 @@ function RoomScreen({ room, rooms, members, isOwner, session, onAddBox, onSelect
         ) : (
           <>
             <h2>{room.name}</h2>
-            <button className="btn-edit-name" onClick={() => setEditing(true)} title="Rename room">✏️</button>
-            <button className="btn-edit-name" onClick={() => setEditingColor(v => !v)} title="Change color">🎨</button>
+            {isOwner && (
+              <>
+                <button className="btn-edit-name" onClick={() => setEditing(true)} title="Rename room">✏️</button>
+                <button className="btn-edit-name" onClick={() => setEditingColor(v => !v)} title="Change color">🎨</button>
+              </>
+            )}
           </>
         )}
       </div>
