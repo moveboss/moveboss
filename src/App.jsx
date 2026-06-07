@@ -428,6 +428,42 @@ function RoomScreen({ room, rooms, members, isOwner, session, onAddBox, onSelect
   const [editingColor, setEditingColor] = useState(false)
   const [confirmDelete, setConfirmDelete] = useState(false)
 
+  function printLabelSheet() {
+    const packedBoxes = boxes.filter(b => b.complete && b.qrDataUrl)
+    if (packedBoxes.length === 0) {
+      alert('No packed boxes with QR codes yet. Pack and complete some boxes first!')
+      return
+    }
+    const win = window.open('', '_blank')
+    const labels = packedBoxes.map(b => `
+      <div class="label">
+        <div class="label-code" style="color:${room.color}">${b.code}</div>
+        <div class="label-room">${room.name}</div>
+        <img src="${b.qrDataUrl}" />
+        <ul class="label-items">${(b.items||[]).map(i => `<li>${i.name}</li>`).join('')}</ul>
+      </div>
+    `).join('')
+    win.document.write(`
+      <html><head><title>Labels – ${room.name}</title>
+      <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: sans-serif; padding: 10px; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+        .label { border: 1px dashed #ccc; border-radius: 6px; padding: 10px; display: flex; flex-direction: column; align-items: center; gap: 4px; page-break-inside: avoid; }
+        .label-code { font-size: 18px; font-weight: 800; letter-spacing: 1px; }
+        .label-room { font-size: 11px; color: #555; }
+        img { width: 80px; height: 80px; }
+        .label-items { font-size: 10px; color: #333; text-align: left; width: 100%; padding-left: 12px; margin-top: 2px; }
+        .label-items li { margin-bottom: 1px; }
+        @media print { body { padding: 0; } }
+      </style></head>
+      <body><div class="grid">${labels}</div>
+      <script>window.onload=()=>window.print()</script>
+      </body></html>
+    `)
+    win.document.close()
+  }
+
   function handleRename() {
     const finalName = nameInput.trim().charAt(0).toUpperCase() + nameInput.trim().slice(1)
     if (finalName && finalName !== room.name) {
@@ -548,6 +584,12 @@ function RoomScreen({ room, rooms, members, isOwner, session, onAddBox, onSelect
           onConfirm={() => onDeleteRoom(room)}
           onCancel={() => setConfirmDelete(false)}
         />
+      )}
+
+      {boxes.some(b => b.complete && b.qrDataUrl) && (
+        <button className="btn-print-sheet" onClick={printLabelSheet}>
+          🖨 Print Label Sheet
+        </button>
       )}
 
       {isOwner && (
