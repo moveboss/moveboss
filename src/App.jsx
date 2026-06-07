@@ -193,7 +193,7 @@ function BoxScreen({ box, room, isOwner, moveReady, session, onUpdate, onBack, o
 
   async function completeBox() {
     if (boxedItems.length === 0) return
-    const qrText = `MOVEBOSS|${box.code}|${box.id}`
+    const qrText = `https://moveboss.vercel.app/?box=${box.id}`
     const url = await QRCode.toDataURL(qrText, { width: 256, margin: 2 })
     setQrDataUrl(url)
     onUpdate({ ...box, complete: true, qrDataUrl: url })
@@ -1130,6 +1130,16 @@ function App({ session }) {
 
       prevRoomsRef.current = loadedRooms
       setRooms(loadedRooms)
+
+      // If opened via QR scan URL, navigate to that box
+      const pendingBoxId = localStorage.getItem('mb_scan_box')
+      if (pendingBoxId) {
+        localStorage.removeItem('mb_scan_box')
+        for (const room of loadedRooms) {
+          const box = room.boxes.find(b => String(b.id) === String(pendingBoxId))
+          if (box) { setSelectedRoom(room); setSelectedBox(box); setScreen('box'); break }
+        }
+      }
     } catch (err) {
       console.error('Load error:', err)
       alert('Error loading data: ' + err.message)

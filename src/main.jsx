@@ -5,11 +5,16 @@ import App from './App.jsx'
 import Auth from './Auth.jsx'
 import { supabase } from './supabase.js'
 
-// Read ?join= param from URL and persist in localStorage
+// Read URL params
 const urlParams = new URLSearchParams(window.location.search)
 const urlJoinCode = urlParams.get('join')
+const urlBoxId = urlParams.get('box')
 if (urlJoinCode) {
   localStorage.setItem('mb_join_code', urlJoinCode)
+  window.history.replaceState({}, '', '/')
+}
+if (urlBoxId) {
+  localStorage.setItem('mb_scan_box', urlBoxId)
   window.history.replaceState({}, '', '/')
 }
 const joinCode = urlJoinCode || localStorage.getItem('mb_join_code')

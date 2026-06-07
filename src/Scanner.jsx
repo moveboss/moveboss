@@ -34,20 +34,19 @@ export default function Scanner({ rooms, onClose }) {
   }, [])
 
   function handleScan(text) {
-    // Format: MOVEBOSS|BOX-CODE|BOX-ID
-    const parts = text.split('|')
-    if (parts[0] !== 'MOVEBOSS' || parts.length < 3) {
-      setError('This QR code is not a MoveBoss label.')
-      return
+    let boxId = null
+    // New format: https://moveboss.vercel.app/?box=BOX-ID
+    if (text.includes('moveboss.vercel.app') || text.includes('?box=')) {
+      try { boxId = new URL(text).searchParams.get('box') } catch { boxId = text.split('?box=')[1] }
+    } else {
+      // Old format: MOVEBOSS|BOX-CODE|BOX-ID
+      const parts = text.split('|')
+      if (parts[0] === 'MOVEBOSS' && parts.length >= 3) boxId = parts[2]
     }
-    const boxId = parts[2]
-    // Search all rooms for this box
+    if (!boxId) { setError('This QR code is not a MoveBoss label.'); return }
     for (const room of rooms) {
       const box = room.boxes.find(b => String(b.id) === String(boxId))
-      if (box) {
-        setResult({ room, box })
-        return
-      }
+      if (box) { setResult({ room, box }); return }
     }
     setError('Box not found in your move. It may belong to a different account.')
   }
