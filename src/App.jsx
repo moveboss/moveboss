@@ -165,6 +165,7 @@ function BoxScreen({ box, room, isOwner, moveReady, session, onUpdate, onBack, o
   const [itemInput, setItemInput] = useState('')
   const [qrDataUrl, setQrDataUrl] = useState(null)
   const [confirmDelete, setConfirmDelete] = useState(false)
+  const [confirmUnpack, setConfirmUnpack] = useState(false)
   const [pinInput, setPinInput] = useState('')
   const [pinError, setPinError] = useState('')
   const [unlocked, setUnlocked] = useState(false)
@@ -383,9 +384,17 @@ function BoxScreen({ box, room, isOwner, moveReady, session, onUpdate, onBack, o
             <a className="btn-primary" href={box.qrDataUrl} download={`${box.code}.png`}>⬇ Download QR</a>
           </div>
           {moveReady
-            ? <button className="btn-reopen" onClick={reopenBox}>📦 Mark as Unpacked</button>
+            ? <button className="btn-reopen" onClick={() => setConfirmUnpack(true)}>📦 Mark as Unpacked</button>
             : <button className="btn-reopen" onClick={reopenBox}>↩ Reopen Box</button>
           }
+          {confirmUnpack && (
+            <DeleteConfirm
+              title="Mark as Unpacked?"
+              message="Are you sure? Marking a box unpacked will delete it from the move."
+              onConfirm={() => { setConfirmUnpack(false); onDelete() }}
+              onCancel={() => setConfirmUnpack(false)}
+            />
+          )}
         </div>
       )}
 
