@@ -11,19 +11,19 @@ const TABS = ['Rooms', 'All Boxes', 'Packers', 'Reports']
 const COLORS = [
   { name: 'Red',        hex: '#E32636', short: 'RED' },
   { name: 'Yellow',     hex: '#FFD700', short: 'YEL' },
-  { name: 'Blue',       hex: '#2563EB', short: 'BLU' },
-  { name: 'Orange',     hex: '#F97316', short: 'ORG' },
   { name: 'Green',      hex: '#16A34A', short: 'GRN' },
+  { name: 'Dark Blue',  hex: '#1E3A8A', short: 'BLU' },
   { name: 'Purple',     hex: '#7C3AED', short: 'PRP' },
-  { name: 'White',      hex: '#FFFFFF', short: 'WHT' },
-  { name: 'Gray',       hex: '#6B7280', short: 'GRY' },
-  { name: 'Pink',       hex: '#EC4899', short: 'PNK' },
   { name: 'Brown',      hex: '#92400E', short: 'BRN' },
-  { name: 'Beige',      hex: '#D4B896', short: 'BGE' },
+  { name: 'White',      hex: '#FFFFFF', short: 'WHT' },
+  { name: 'Light Green',hex: '#86EFAC', short: 'LGN' },
+  { name: 'Orange',     hex: '#F97316', short: 'ORG' },
+  { name: 'Pink',       hex: '#EC4899', short: 'PNK' },
   { name: 'Light Blue', hex: '#7DD3FC', short: 'LBL' },
-  { name: 'Teal',       hex: '#0D9488', short: 'TEA' },
-  { name: 'Maroon',     hex: '#7F1D1D', short: 'MAR' },
-  { name: 'Mint',       hex: '#6EE7B7', short: 'MNT' },
+  { name: 'Black',      hex: '#111827', short: 'BLK' },
+  { name: 'Gray',       hex: '#6B7280', short: 'GRY' },
+  { name: 'Neon Green', hex: '#39FF14', short: 'NGR' },
+  { name: 'Neon Pink',  hex: '#FF6EC7', short: 'NPK' },
 ]
 
 const HUNDRED_BLOCKS = [
