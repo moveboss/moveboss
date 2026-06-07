@@ -382,7 +382,10 @@ function BoxScreen({ box, room, isOwner, moveReady, session, onUpdate, onBack, o
             <button className="btn-primary" onClick={printLabel}>🖨 Print Label</button>
             <a className="btn-primary" href={box.qrDataUrl} download={`${box.code}.png`}>⬇ Download QR</a>
           </div>
-          {moveReady && <button className="btn-reopen" onClick={reopenBox}>📦 Mark as Unpacked</button>}
+          {moveReady
+            ? <button className="btn-reopen" onClick={reopenBox}>📦 Mark as Unpacked</button>
+            : <button className="btn-reopen" onClick={reopenBox}>↩ Reopen Box</button>
+          }
         </div>
       )}
 
