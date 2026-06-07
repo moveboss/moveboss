@@ -446,15 +446,14 @@ function RoomScreen({ room, rooms, members, isOwner, session, onAddBox, onSelect
       <html><head><title>Labels – ${room.name}</title>
       <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: sans-serif; padding: 10px; }
-        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-        .label { border: 1px dashed #ccc; border-radius: 6px; padding: 10px; display: flex; flex-direction: column; align-items: center; gap: 4px; page-break-inside: avoid; }
-        .label-code { font-size: 18px; font-weight: 800; letter-spacing: 1px; }
-        .label-room { font-size: 11px; color: #555; }
-        img { width: 80px; height: 80px; }
-        .label-items { font-size: 10px; color: #333; text-align: left; width: 100%; padding-left: 12px; margin-top: 2px; }
-        .label-items li { margin-bottom: 1px; }
-        @media print { body { padding: 0; } }
+        html, body { height: 100%; font-family: sans-serif; }
+        body { padding: 8px; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: repeat(4, 1fr); gap: 6px; height: calc(100vh - 16px); }
+        .label { border: 1px dashed #ccc; border-radius: 6px; padding: 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; page-break-inside: avoid; }
+        .label-code { font-size: 20px; font-weight: 800; letter-spacing: 1px; }
+        .label-room { font-size: 12px; color: #555; }
+        img { width: 100px; height: 100px; }
+        @media print { body { padding: 4px; } .grid { height: calc(100vh - 8px); } }
       </style></head>
       <body><div class="grid">${labels}</div>
       <script>window.onload=()=>window.print()</script>
