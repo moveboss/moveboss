@@ -1008,7 +1008,7 @@ function App({ session }) {
 
       if (!move) {
         // Check if already a packer on someone else's move
-        const { data: membership } = await supabase.from('move_members').select('move_id').eq('user_id', session.user.id).single()
+        const { data: membership } = await supabase.from('move_members').select('move_id, role').eq('user_id', session.user.id).single()
         if (membership) {
           const { data: sharedMove } = await supabase.from('moves').select('*').eq('id', membership.move_id).single()
           move = sharedMove
