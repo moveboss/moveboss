@@ -572,6 +572,79 @@ function RoomsTab({ rooms, members, isOwner, onAddRoom, onSelectRoom }) {
   )
 }
 
+// ── All Boxes Tab ────────────────────────────────────────────────
+function AllBoxesTab({ rooms, onSelectBox }) {
+  const [search, setSearch] = useState('')
+
+  const allBoxes = rooms.flatMap(room =>
+    room.boxes.map(box => ({ box, room }))
+  )
+
+  const query = search.trim().toLowerCase()
+
+  const results = query === '' ? allBoxes : allBoxes.filter(({ box, room }) => {
+    const matchesCode = box.code.toLowerCase().includes(query)
+    const matchesRoom = room.name.toLowerCase().includes(query)
+    const matchesItem = (box.items || []).some(i => i.name.toLowerCase().includes(query))
+    return matchesCode || matchesRoom || matchesItem
+  })
+
+  if (rooms.length === 0) {
+    return <div className="empty-state"><p>No boxes yet. Add a room first.</p></div>
+  }
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+      <div className="search-bar-wrap">
+        <span className="search-icon">🔍</span>
+        <input
+          className="search-input"
+          placeholder="Search items, boxes, or rooms..."
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+        />
+        {search && <button className="search-clear" onClick={() => setSearch('')}>✕</button>}
+      </div>
+
+      {query && (
+        <p className="search-results-label">
+          {results.length === 0 ? 'No results found' : `${results.length} result${results.length !== 1 ? 's' : ''} for "${query}"`}
+        </p>
+      )}
+
+      {results.length === 0 && query ? null : (
+        <ul className="box-list">
+          {results.map(({ box, room }) => {
+            const matchingItems = query
+              ? (box.items || []).filter(i => i.name.toLowerCase().includes(query))
+              : []
+            return (
+              <li key={box.id} className="box-row" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: 4 }}
+                onClick={() => onSelectBox(room, box)}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%' }}>
+                  <span className="color-dot sm" style={{ background: room.color, border: room.colorName === 'White' ? '1px solid #ccc' : 'none' }} />
+                  <span className="box-code">{box.code}</span>
+                  <span className="box-item-count">{box.isPrivate ? '••••' : `${(box.items||[]).length} items`}</span>
+                  <span className={`badge ${box.complete ? 'badge-complete' : 'badge-packing'}`}>
+                    {box.complete ? 'Packed ✓' : 'Packing'}
+                  </span>
+                </div>
+                {matchingItems.length > 0 && (
+                  <div className="search-match-items">
+                    {matchingItems.map(i => (
+                      <span key={i.id} className="search-match-item">📦 {i.name}</span>
+                    ))}
+                  </div>
+                )}
+              </li>
+            )
+          })}
+        </ul>
+      )}
+    </div>
+  )
+}
+
 // ── Packers Tab ──────────────────────────────────────────────────
 function PackersTab({ inviteCode, members, isOwner, ownerEmail }) {
   const [copied, setCopied] = useState(false)
@@ -1088,22 +1161,10 @@ function App({ session }) {
           />
         )}
         {activeTab === 'All Boxes' && (
-          rooms.length === 0
-            ? <div className="empty-state"><p>No boxes yet. Add a room first.</p></div>
-            : (
-              <ul className="box-list">
-                {rooms.flatMap(room => room.boxes.map(box => (
-                  <li key={box.id} className="box-row" onClick={() => { setSelectedRoom(room); setSelectedBox(box); setScreen('box') }}>
-                    <span className="color-dot sm" style={{ background: room.color, border: room.colorName === 'White' ? '1px solid #ccc' : 'none' }} />
-                    <span className="box-code">{box.code}</span>
-                    <span className="box-item-count">{(box.items||[]).length} items</span>
-                    <span className={`badge ${box.complete ? 'badge-complete' : 'badge-packing'}`}>
-                      {box.complete ? 'Packed ✓' : 'Packing'}
-                    </span>
-                  </li>
-                )))}
-              </ul>
-            )
+          <AllBoxesTab
+            rooms={rooms}
+            onSelectBox={(room, box) => { setSelectedRoom(room); setSelectedBox(box); setScreen('box') }}
+          />
         )}
         {activeTab === 'Packers' && (
           <PackersTab

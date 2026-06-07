@@ -841,6 +841,66 @@ body {
   align-self: flex-start;
 }
 
+/* ── Search ── */
+.search-bar-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #f9fafb;
+  border: 1.5px solid #d1d5db;
+  border-radius: 10px;
+  padding: 8px 12px;
+  transition: border-color 0.15s;
+}
+
+.search-bar-wrap:focus-within {
+  border-color: #1D9E75;
+}
+
+.search-icon {
+  font-size: 16px;
+}
+
+.search-input {
+  flex: 1;
+  border: none;
+  background: none;
+  font-size: 15px;
+  outline: none;
+  color: #1a1a1a;
+}
+
+.search-clear {
+  background: none;
+  border: none;
+  color: #9ca3af;
+  cursor: pointer;
+  font-size: 14px;
+  padding: 0;
+}
+
+.search-results-label {
+  font-size: 13px;
+  color: #6b7280;
+}
+
+.search-match-items {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding-left: 22px;
+}
+
+.search-match-item {
+  font-size: 12px;
+  background: #f0fdf8;
+  color: #1D9E75;
+  border: 1px solid #1D9E75;
+  border-radius: 99px;
+  padding: 2px 8px;
+  font-weight: 500;
+}
+
 /* ── Assigned badge ── */
 .assigned-badge {
   background: #f0fdf8;
