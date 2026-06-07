@@ -777,7 +777,7 @@ function PackersTab({ inviteCode, members, setMembers, isOwner }) {
 }
 
 // ── Reports Tab ──────────────────────────────────────────────────
-function ReportsTab({ rooms, onShowReady, moveReady, onBackToPacking }) {
+function ReportsTab({ rooms, onShowReady, moveReady, onBackToPacking, onRegenerateQR }) {
   const totalBoxes = rooms.reduce((sum, r) => sum + r.boxes.length, 0)
   const totalItems = rooms.reduce((sum, r) => sum + r.boxes.reduce((s, b) => s + (b.items||[]).length, 0), 0)
   const packedBoxes = rooms.reduce((sum, r) => sum + r.boxes.filter(b => b.complete).length, 0)
@@ -922,6 +922,13 @@ function ReportsTab({ rooms, onShowReady, moveReady, onBackToPacking }) {
       </button>
       <p style={{ textAlign: 'center', fontSize: 13, color: '#9ca3af', marginTop: -8 }}>
         Opens a print-ready page with every room, box, and item
+      </p>
+
+      <button className="btn-back-to-packing" onClick={onRegenerateQR} style={{ marginTop: 8 }}>
+        🔄 Fix QR Codes (tap once to update all)
+      </button>
+      <p style={{ textAlign: 'center', fontSize: 12, color: '#9ca3af', marginTop: 4 }}>
+        Only needed if QR codes are opening a search instead of the app
       </p>
     </div>
   )
@@ -1423,6 +1430,21 @@ function App({ session }) {
             onBackToPacking={async () => {
               await supabase.from('moves').update({ is_ready: false }).eq('id', moveId)
               setMoveReady(false)
+            }}
+            onRegenerateQR={async () => {
+              let count = 0
+              for (const room of rooms) {
+                for (const box of room.boxes) {
+                  if (box.complete) {
+                    const qrText = `https://moveboss.vercel.app/?box=${box.id}`
+                    const url = await QRCode.toDataURL(qrText, { width: 256, margin: 2 })
+                    await supabase.from('boxes').update({ qr_data_url: url }).eq('id', box.id)
+                    count++
+                  }
+                }
+              }
+              await reloadRooms(moveId)
+              alert(`✅ Regenerated QR codes for ${count} box${count !== 1 ? 'es' : ''}!`)
             }}
           />
         )}
