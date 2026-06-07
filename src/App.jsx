@@ -778,34 +778,45 @@ function App({ session }) {
       let move = null
       let owner = true
 
-      // Check join code FIRST — takes priority over owned move
+      // Check join code FIRST — takes priority over everything
       const pendingCode = localStorage.getItem('mb_join_code')
       if (pendingCode) {
         const { data: joinMove } = await supabase.from('moves').select('*').eq('invite_code', pendingCode).single()
         if (joinMove) {
-          await supabase.from('move_members').upsert(
-            { move_id: joinMove.id, user_id: session.user.id, email: session.user.email },
-            { onConflict: 'move_id,user_id' }
+          // Delete their own empty move if they have one
+          const { data: ownedMoves } = await supabase.from('moves').select('*').eq('owner_id', session.user.id)
+          const ownedMove = ownedMoves?.[0]
+          if (ownedMove && ownedMove.id !== joinMove.id) {
+            // Only delete if it's empty (no rooms)
+            const { data: ownedRooms } = await supabase.from('rooms').select('id').eq('move_id', ownedMove.id)
+            if (!ownedRooms || ownedRooms.length === 0) {
+              await supabase.from('moves').delete().eq('id', ownedMove.id)
+            }
+          }
+          // Add them as a member
+          await supabase.from('move_members').insert(
+            { move_id: joinMove.id, user_id: session.user.id, email: session.user.email }
           )
           localStorage.removeItem('mb_join_code')
           move = joinMove
           owner = false
+        } else {
+          localStorage.removeItem('mb_join_code')
         }
       }
 
       if (!move) {
-        // Check if user owns a move
-        const { data: ownedMoves } = await supabase.from('moves').select('*').eq('owner_id', session.user.id)
-        move = ownedMoves?.[0]
-
-        if (!move) {
-          // Check if already a packer on someone else's move
-          const { data: membership } = await supabase.from('move_members').select('move_id').eq('user_id', session.user.id).single()
-          if (membership) {
-            const { data: sharedMove } = await supabase.from('moves').select('*').eq('id', membership.move_id).single()
-            move = sharedMove
-            owner = false
-          } else {
+        // Check if already a packer on someone else's move
+        const { data: membership } = await supabase.from('move_members').select('move_id').eq('user_id', session.user.id).single()
+        if (membership) {
+          const { data: sharedMove } = await supabase.from('moves').select('*').eq('id', membership.move_id).single()
+          move = sharedMove
+          owner = false
+        } else {
+          // Check if user owns a move
+          const { data: ownedMoves } = await supabase.from('moves').select('*').eq('owner_id', session.user.id)
+          move = ownedMoves?.[0]
+          if (!move) {
             // Create new move
             const { data, error } = await supabase.from('moves').insert({ name: 'My Move', owner_id: session.user.id }).select().single()
             if (error) throw error
