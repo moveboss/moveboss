@@ -737,7 +737,7 @@ function PackersTab({ inviteCode, members, setMembers, isOwner }) {
 }
 
 // ── Reports Tab ──────────────────────────────────────────────────
-function ReportsTab({ rooms, onShowReady }) {
+function ReportsTab({ rooms, onShowReady, moveReady, onBackToPacking }) {
   const totalBoxes = rooms.reduce((sum, r) => sum + r.boxes.length, 0)
   const totalItems = rooms.reduce((sum, r) => sum + r.boxes.reduce((s, b) => s + (b.items||[]).length, 0), 0)
   const packedBoxes = rooms.reduce((sum, r) => sum + r.boxes.filter(b => b.complete).length, 0)
@@ -833,6 +833,11 @@ function ReportsTab({ rooms, onShowReady }) {
         {totalBoxes > 0 && packedBoxes === totalBoxes && (
           <button className="btn-ready-trigger" onClick={onShowReady}>
             🚛 Ready for the Road!
+          </button>
+        )}
+        {moveReady && (
+          <button className="btn-back-to-packing" onClick={onBackToPacking}>
+            ↩ Back to Packing
           </button>
         )}
       </div>
@@ -1361,7 +1366,15 @@ function App({ session }) {
           />
         )}
         {activeTab === 'Reports' && (
-          <ReportsTab rooms={rooms} onShowReady={() => setShowReadyModal(true)} />
+          <ReportsTab
+            rooms={rooms}
+            moveReady={moveReady}
+            onShowReady={() => setShowReadyModal(true)}
+            onBackToPacking={async () => {
+              await supabase.from('moves').update({ is_ready: false }).eq('id', moveId)
+              setMoveReady(false)
+            }}
+          />
         )}
       </main>
     </div>
