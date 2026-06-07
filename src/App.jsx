@@ -890,6 +890,7 @@ function App({ session }) {
   const [members, setMembers] = useState([])
   const [isOwner, setIsOwner] = useState(true)
   const [toasts, setToasts] = useState([])
+  const [showReadyModal, setShowReadyModal] = useState(false)
   const prevRoomsRef = useRef([])
 
   const totalBoxes = rooms.reduce((sum, r) => sum + r.boxes.length, 0)
@@ -957,7 +958,7 @@ function App({ session }) {
       const allBoxes = loadedRooms.flatMap(r => r.boxes)
       const prevAllBoxes = prev.flatMap(r => r.boxes)
       if (allBoxes.length > 0 && allBoxes.every(b => b.complete) && !prevAllBoxes.every(b => b.complete)) {
-        addToast('🎉 Everything is packed! You\'re ready to move!', 'celebrate')
+        setShowReadyModal(true)
       }
     }
 
@@ -1208,6 +1209,17 @@ function App({ session }) {
     /></div>
   }
 
+  function fireFireworks() {
+    const duration = 4000
+    const end = Date.now() + duration
+    const colors = ['#1D9E75', '#7C3AED', '#F59E0B', '#EF4444', '#3B82F6', '#EC4899']
+    ;(function frame() {
+      confetti({ particleCount: 6, angle: 60, spread: 55, origin: { x: 0 }, colors })
+      confetti({ particleCount: 6, angle: 120, spread: 55, origin: { x: 1 }, colors })
+      if (Date.now() < end) requestAnimationFrame(frame)
+    })()
+  }
+
   async function handleSaveMoveName() {
     const finalName = moveNameInput.trim() || 'My Move'
     await supabase.from('moves').update({ name: finalName }).eq('id', moveId)
@@ -1226,6 +1238,21 @@ function App({ session }) {
               <button className="toast-close" onClick={() => setToasts(prev => prev.filter(x => x.id !== t.id))}>✕</button>
             </div>
           ))}
+        </div>
+      )}
+      {showReadyModal && (
+        <div className="ready-overlay">
+          <div className="ready-modal">
+            <div className="ready-emoji">🚛</div>
+            <h2 className="ready-title">Ready for the Road!</h2>
+            <p className="ready-subtitle">Every single box is packed.<br/>You did it — time to move!</p>
+            <button className="btn-letsgo" onClick={() => { fireFireworks(); setShowReadyModal(false) }}>
+              Let's Go! 🎉
+            </button>
+            <button className="btn-ready-dismiss" onClick={() => setShowReadyModal(false)}>
+              Not quite yet
+            </button>
+          </div>
         </div>
       )}
       {scanning && <Scanner rooms={rooms} onClose={() => setScanning(false)} />}
