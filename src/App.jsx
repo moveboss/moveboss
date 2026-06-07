@@ -295,7 +295,7 @@ function BoxScreen({ box, room, onUpdate, onBack }) {
 }
 
 // ── Room Screen ──────────────────────────────────────────────────
-function RoomScreen({ room, onAddBox, onSelectBox, onBack, onRenameRoom }) {
+function RoomScreen({ room, rooms, onAddBox, onSelectBox, onBack, onRenameRoom, onRecolorRoom }) {
   const boxes = room.boxes || []
   const usedCount = boxes.length
   const atLimit = usedCount >= 99
@@ -303,6 +303,7 @@ function RoomScreen({ room, onAddBox, onSelectBox, onBack, onRenameRoom }) {
   const showWarning90 = usedCount >= 90
   const [editing, setEditing] = useState(false)
   const [nameInput, setNameInput] = useState(room.name)
+  const [editingColor, setEditingColor] = useState(false)
 
   function handleRename() {
     if (nameInput.trim() && nameInput.trim() !== room.name) {
@@ -333,9 +334,32 @@ function RoomScreen({ room, onAddBox, onSelectBox, onBack, onRenameRoom }) {
           <>
             <h2>{room.name}</h2>
             <button className="btn-edit-name" onClick={() => setEditing(true)} title="Rename room">✏️</button>
+            <button className="btn-edit-name" onClick={() => setEditingColor(v => !v)} title="Change color">🎨</button>
           </>
         )}
       </div>
+
+      {editingColor && (
+        <div className="form-group">
+          <label className="form-label">Choose a new color</label>
+          <div className="color-grid">
+            {COLORS.map(color => {
+              const takenByOther = rooms.filter(r => r.id !== room.id).map(r => r.color).includes(color.hex)
+              return (
+                <button
+                  key={color.name}
+                  className={`color-swatch ${color.name === 'White' ? 'white-swatch' : ''} ${takenByOther ? 'swatch-taken' : ''}`}
+                  style={{ background: color.hex, opacity: takenByOther ? 0.25 : 1 }}
+                  title={takenByOther ? 'Already used' : color.name}
+                  disabled={takenByOther}
+                  onClick={() => { onRecolorRoom(room, color); setEditingColor(false) }}
+                />
+              )
+            })}
+          </div>
+          <button className="btn-back" style={{ marginTop: 4 }} onClick={() => setEditingColor(false)}>Cancel</button>
+        </div>
+      )}
 
       {showWarning90 && <div className="warning warning-red">⚠️ Almost full! {99 - usedCount} boxes left in this range.</div>}
       {showWarning75 && !showWarning90 && <div className="warning warning-amber">📦 {usedCount} of 99 boxes used in this range.</div>}
@@ -673,6 +697,13 @@ function App({ session }) {
     setSelectedRoom(updatedRoom)
   }
 
+  async function handleRecolorRoom(room, color) {
+    await supabase.from('rooms').update({ color: color.hex, color_name: color.name, color_short: color.short }).eq('id', room.id)
+    const updatedRoom = { ...room, color: color.hex, colorName: color.name, colorShort: color.short }
+    setRooms(prev => prev.map(r => r.id === room.id ? updatedRoom : r))
+    setSelectedRoom(updatedRoom)
+  }
+
   // Screen routing
   if (loading) return <div className="app"><div className="empty-state" style={{paddingTop:100}}>Loading your move...</div></div>
 
@@ -682,10 +713,12 @@ function App({ session }) {
   if (screen === 'room') {
     return <div className="app"><RoomScreen
       room={selectedRoom}
+      rooms={rooms}
       onAddBox={handleAddBox}
       onSelectBox={box => { setSelectedBox(box); setScreen('box') }}
       onBack={() => setScreen('home')}
       onRenameRoom={handleRenameRoom}
+      onRecolorRoom={handleRecolorRoom}
     /></div>
   }
   if (screen === 'box') {
