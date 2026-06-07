@@ -29,12 +29,12 @@ function Root() {
 
   useEffect(() => {
     supabase.auth.getSession().then(async ({ data: { session } }) => {
-      if (session && joinCode) await handleJoin(session.user.id, session.user.email)
+      if (session) await handleJoin(session.user.id, session.user.email)
       setSession(session)
       setLoading(false)
     })
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      if (session && joinCode) await handleJoin(session.user.id, session.user.email)
+      if (session) await handleJoin(session.user.id, session.user.email)
       setSession(session)
     })
     return () => subscription.unsubscribe()
