@@ -830,7 +830,8 @@ function App({ session }) {
       setInviteCode(move.invite_code)
 
       // Load members
-      const { data: memberRows } = await supabase.from('move_members').select('*').eq('move_id', move.id)
+      const { data: memberRows, error: membersError } = await supabase.from('move_members').select('*').eq('move_id', move.id)
+      console.log('move.id:', move.id, 'memberRows:', memberRows, 'error:', membersError)
       setMembers(memberRows || [])
 
       // Load rooms
