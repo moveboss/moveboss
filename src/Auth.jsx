@@ -5,6 +5,7 @@ export default function Auth({ joinCode }) {
   const [mode, setMode] = useState('login') // 'login' | 'signup'
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [name, setName] = useState('')
   const [manualCode, setManualCode] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -22,7 +23,7 @@ export default function Auth({ joinCode }) {
     }
 
     if (mode === 'signup') {
-      const { error } = await supabase.auth.signUp({ email, password })
+      const { error } = await supabase.auth.signUp({ email, password, options: { data: { full_name: name.trim() } } })
       if (error) { setError(error.message); setLoading(false); return }
       setMessage('Account created! Signing you in...')
     } else {
@@ -48,6 +49,19 @@ export default function Auth({ joinCode }) {
 
         <form className="auth-form" onSubmit={handleSubmit}>
           <h2 className="auth-title">{mode === 'login' ? 'Sign In' : 'Create Account'}</h2>
+
+          {mode === 'signup' && (
+            <div className="form-group">
+              <label className="form-label">Your Name</label>
+              <input
+                className="form-input"
+                placeholder="e.g. Sarah"
+                value={name}
+                onChange={e => setName(e.target.value)}
+                required
+              />
+            </div>
+          )}
 
           <div className="form-group">
             <label className="form-label">Email</label>

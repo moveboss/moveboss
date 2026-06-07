@@ -512,7 +512,7 @@ function RoomScreen({ room, rooms, members, isOwner, session, onAddBox, onSelect
           >
             <option value="">Unassigned</option>
             {members.map(m => (
-              <option key={m.user_id} value={m.user_id}>{m.email}</option>
+              <option key={m.user_id} value={m.user_id}>{m.name || m.email}</option>
             ))}
           </select>
         </div>
@@ -697,8 +697,8 @@ function PackersTab({ inviteCode, members, setMembers, isOwner, ownerEmail }) {
             <ul style={{ listStyle: 'none', marginTop: 12, display: 'flex', flexDirection: 'column', gap: 8 }}>
               {members.map(m => (
                 <li key={m.id} className="member-row">
-                  <span className="member-avatar" style={{ background: m.role === 'owner' ? '#7C3AED' : '#1D9E75' }}>{(m.email||'?')[0].toUpperCase()}</span>
-                  <span className="member-email">{m.email}</span>
+                  <span className="member-avatar" style={{ background: m.role === 'owner' ? '#7C3AED' : '#1D9E75' }}>{(m.name || m.email||'?')[0].toUpperCase()}</span>
+                  <span className="member-email">{m.name || m.email}</span>
                   <button
                     className={`badge ${m.role === 'owner' ? 'badge-complete' : 'badge-packing'}`}
                     style={{ cursor: 'pointer', border: 'none' }}
@@ -912,8 +912,9 @@ function App({ session }) {
             }
           }
           // Add them as a member
+          const fullName = session.user.user_metadata?.full_name || ''
           await supabase.from('move_members').insert(
-            { move_id: joinMove.id, user_id: session.user.id, email: session.user.email }
+            { move_id: joinMove.id, user_id: session.user.id, email: session.user.email, name: fullName }
           )
           localStorage.removeItem('mb_join_code')
           move = joinMove
