@@ -651,7 +651,7 @@ function AllBoxesTab({ rooms, onSelectBox }) {
 }
 
 // ── Packers Tab ──────────────────────────────────────────────────
-function PackersTab({ inviteCode, members, setMembers, isOwner, ownerEmail }) {
+function PackersTab({ inviteCode, members, setMembers, isOwner }) {
   const [copied, setCopied] = useState(false)
   const inviteLink = `${window.location.origin}/?join=${inviteCode}`
 
@@ -1025,9 +1025,20 @@ function App({ session }) {
       setMoveNameInput(move.name || 'My Move')
       setMoveReady(move.is_ready || false)
 
-      // Load members
-      const { data: memberRows } = await supabase.from('move_members').select('*').eq('move_id', move.id)
-      setMembers(memberRows || [])
+      // Load members — ensure owner is always in the list
+      let { data: memberRows } = await supabase.from('move_members').select('*').eq('move_id', move.id)
+      memberRows = memberRows || []
+      const alreadyMember = memberRows.some(m => m.user_id === session.user.id)
+      if (!alreadyMember) {
+        const ownerName = session.user.user_metadata?.full_name || session.user.email
+        await supabase.from('move_members').insert({
+          move_id: move.id, user_id: session.user.id,
+          email: session.user.email, name: ownerName, role: 'owner'
+        })
+        const { data: refreshed } = await supabase.from('move_members').select('*').eq('move_id', move.id)
+        memberRows = refreshed || []
+      }
+      setMembers(memberRows)
 
       // Load rooms
       const { data: roomRows } = await supabase.from('rooms').select('*').eq('move_id', move.id)
@@ -1330,7 +1341,6 @@ function App({ session }) {
             members={members}
             setMembers={setMembers}
             isOwner={isOwner}
-            ownerEmail={session.user.email}
           />
         )}
         {activeTab === 'Reports' && (
