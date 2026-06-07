@@ -652,6 +652,24 @@ body {
 }
 
 /* ── Scan button ── */
+.btn-delete {
+  background: none;
+  border: 1.5px solid #fca5a5;
+  color: #dc2626;
+  border-radius: 8px;
+  padding: 10px 20px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  width: 100%;
+  margin-top: 8px;
+  transition: background 0.15s;
+}
+
+.btn-delete:hover {
+  background: #fee2e2;
+}
+
 .btn-scan {
   background: #1D9E75;
   color: #fff;

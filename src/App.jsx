@@ -47,9 +47,10 @@ function AddRoomScreen({ rooms, onSave, onCancel }) {
     if (!selectedColor) { setError('Please choose a color.'); return }
     if (!selectedStart) { setError('Please choose a number range.'); return }
     setError('')
+    const finalName = name.trim().charAt(0).toUpperCase() + name.trim().slice(1)
     onSave({
       id: Date.now(),
-      name: name.trim(),
+      name: finalName,
       color: selectedColor.hex,
       colorName: selectedColor.name,
       colorShort: selectedColor.short,
@@ -158,7 +159,7 @@ function AddRoomScreen({ rooms, onSave, onCancel }) {
 }
 
 // ── Box Screen ───────────────────────────────────────────────────
-function BoxScreen({ box, room, onUpdate, onBack }) {
+function BoxScreen({ box, room, onUpdate, onBack, onDelete }) {
   const [itemInput, setItemInput] = useState('')
   const [qrDataUrl, setQrDataUrl] = useState(null)
   const canvasRef = useRef(null)
@@ -291,12 +292,19 @@ function BoxScreen({ box, room, onUpdate, onBack }) {
           <button className="btn-reopen" onClick={reopenBox}>↩ Reopen Box</button>
         </div>
       )}
+
+      <button
+        className="btn-delete"
+        onClick={() => { if (window.confirm(`Delete ${box.code}? This cannot be undone.`)) onDelete(box) }}
+      >
+        🗑 Delete Box
+      </button>
     </div>
   )
 }
 
 // ── Room Screen ──────────────────────────────────────────────────
-function RoomScreen({ room, rooms, onAddBox, onSelectBox, onBack, onRenameRoom, onRecolorRoom }) {
+function RoomScreen({ room, rooms, onAddBox, onSelectBox, onBack, onRenameRoom, onRecolorRoom, onDeleteRoom }) {
   const boxes = room.boxes || []
   const usedCount = boxes.length
   const atLimit = usedCount >= 99
@@ -307,8 +315,9 @@ function RoomScreen({ room, rooms, onAddBox, onSelectBox, onBack, onRenameRoom, 
   const [editingColor, setEditingColor] = useState(false)
 
   function handleRename() {
-    if (nameInput.trim() && nameInput.trim() !== room.name) {
-      onRenameRoom(room, nameInput.trim())
+    const finalName = nameInput.trim().charAt(0).toUpperCase() + nameInput.trim().slice(1)
+    if (finalName && finalName !== room.name) {
+      onRenameRoom(room, finalName)
     }
     setEditing(false)
   }
@@ -389,6 +398,18 @@ function RoomScreen({ room, rooms, onAddBox, onSelectBox, onBack, onRenameRoom, 
         disabled={atLimit}
       >
         + Add New Box
+      </button>
+
+      <button
+        className="btn-delete"
+        onClick={() => {
+          const msg = room.boxes.length > 0
+            ? `Delete ${room.name} and all ${room.boxes.length} boxes in it? This cannot be undone.`
+            : `Delete ${room.name}? This cannot be undone.`
+          if (window.confirm(msg)) onDeleteRoom(room)
+        }}
+      >
+        🗑 Delete Room
       </button>
     </div>
   )
@@ -699,6 +720,26 @@ function App({ session }) {
     setSelectedRoom(updatedRoom)
   }
 
+  async function handleDeleteRoom(room) {
+    // Delete items, boxes, then room
+    for (const box of room.boxes) {
+      await supabase.from('items').delete().eq('box_id', box.id)
+    }
+    await supabase.from('boxes').delete().eq('room_id', room.id)
+    await supabase.from('rooms').delete().eq('id', room.id)
+    setRooms(prev => prev.filter(r => r.id !== room.id))
+    setScreen('home')
+  }
+
+  async function handleDeleteBox(box) {
+    await supabase.from('items').delete().eq('box_id', box.id)
+    await supabase.from('boxes').delete().eq('id', box.id)
+    const updatedRoom = { ...selectedRoom, boxes: selectedRoom.boxes.filter(b => b.id !== box.id) }
+    setRooms(prev => prev.map(r => r.id === updatedRoom.id ? updatedRoom : r))
+    setSelectedRoom(updatedRoom)
+    setScreen('room')
+  }
+
   async function handleRecolorRoom(room, color) {
     await supabase.from('rooms').update({ color: color.hex, color_name: color.name, color_short: color.short }).eq('id', room.id)
     const updatedRoom = { ...room, color: color.hex, colorName: color.name, colorShort: color.short }
@@ -721,6 +762,7 @@ function App({ session }) {
       onBack={() => setScreen('home')}
       onRenameRoom={handleRenameRoom}
       onRecolorRoom={handleRecolorRoom}
+      onDeleteRoom={handleDeleteRoom}
     /></div>
   }
   if (screen === 'box') {
@@ -729,6 +771,7 @@ function App({ session }) {
       room={selectedRoom}
       onUpdate={handleUpdateBox}
       onBack={() => setScreen('room')}
+      onDelete={handleDeleteBox}
     /></div>
   }
 
