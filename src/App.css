@@ -651,6 +651,104 @@ body {
   text-decoration: none;
 }
 
+/* ── Scan button ── */
+.btn-scan {
+  background: #1D9E75;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 6px 12px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn-scan:hover {
+  background: #0F6E56;
+}
+
+/* ── Scanner overlay ── */
+.scanner-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.6);
+  z-index: 100;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.scanner-sheet {
+  background: #fff;
+  border-radius: 20px 20px 0 0;
+  width: 100%;
+  max-width: 480px;
+  padding: 24px 20px 40px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.scanner-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.scanner-header h2 {
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.scanner-hint {
+  font-size: 14px;
+  color: #6b7280;
+  text-align: center;
+}
+
+.qr-reader-box {
+  width: 100%;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.scanner-result {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding-top: 8px;
+}
+
+.scan-success-icon {
+  font-size: 48px;
+  color: #1D9E75;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.scan-box-code {
+  font-size: 32px;
+  font-weight: 800;
+  letter-spacing: 1px;
+}
+
+.scan-room-name {
+  font-size: 16px;
+  color: #6b7280;
+  margin-top: -4px;
+}
+
+.scan-items-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #374151;
+  margin-top: 8px;
+  align-self: flex-start;
+}
+
 /* ── Reports ── */
 .report-card {
   background: #fff;

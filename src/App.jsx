@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import QRCode from 'qrcode'
 import { supabase } from './supabase'
+import Scanner from './Scanner'
 import './App.css'
 
 const TABS = ['Rooms', 'All Boxes', 'Packers', 'Reports']
@@ -573,6 +574,7 @@ function App({ session }) {
   const [selectedRoom, setSelectedRoom] = useState(null)
   const [selectedBox, setSelectedBox] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [scanning, setScanning] = useState(false)
 
   const totalBoxes = rooms.reduce((sum, r) => sum + r.boxes.length, 0)
   const totalItems = rooms.reduce((sum, r) => sum + r.boxes.reduce((s, b) => s + (b.items||[]).length, 0), 0)
@@ -732,12 +734,16 @@ function App({ session }) {
 
   return (
     <div className="app">
+      {scanning && <Scanner rooms={rooms} onClose={() => setScanning(false)} />}
       <header className="app-header">
         <div className="header-top">
           <h1 className="logo">
             <span className="logo-move">Move</span><span className="logo-boss">Boss</span>
           </h1>
-          <button className="btn-signout" onClick={() => supabase.auth.signOut()}>Sign out</button>
+          <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+            <button className="btn-scan" onClick={() => setScanning(true)}>📷 Scan</button>
+            <button className="btn-signout" onClick={() => supabase.auth.signOut()}>Sign out</button>
+          </div>
         </div>
         <div className="stats-row">
           <div className="stat">
