@@ -161,7 +161,7 @@ function AddRoomScreen({ rooms, onSave, onCancel }) {
 }
 
 // ── Box Screen ───────────────────────────────────────────────────
-function BoxScreen({ box, room, isOwner, session, onUpdate, onBack, onDelete }) {
+function BoxScreen({ box, room, isOwner, moveReady, session, onUpdate, onBack, onDelete }) {
   const [itemInput, setItemInput] = useState('')
   const [qrDataUrl, setQrDataUrl] = useState(null)
   const [confirmDelete, setConfirmDelete] = useState(false)
@@ -382,7 +382,7 @@ function BoxScreen({ box, room, isOwner, session, onUpdate, onBack, onDelete }) 
             <button className="btn-primary" onClick={printLabel}>🖨 Print Label</button>
             <a className="btn-primary" href={box.qrDataUrl} download={`${box.code}.png`}>⬇ Download QR</a>
           </div>
-          <button className="btn-reopen" onClick={reopenBox}>↩ Reopen Box</button>
+          {moveReady && <button className="btn-reopen" onClick={reopenBox}>📦 Mark as Unpacked</button>}
         </div>
       )}
 
@@ -889,6 +889,7 @@ function App({ session }) {
   const [inviteCode, setInviteCode] = useState(null)
   const [members, setMembers] = useState([])
   const [isOwner, setIsOwner] = useState(true)
+  const [moveReady, setMoveReady] = useState(false)
   const [toasts, setToasts] = useState([])
   const [showReadyModal, setShowReadyModal] = useState(false)
   const prevRoomsRef = useRef([])
@@ -1030,6 +1031,7 @@ function App({ session }) {
       setInviteCode(move.invite_code)
       setMoveName(move.name || 'My Move')
       setMoveNameInput(move.name || 'My Move')
+      setMoveReady(move.is_ready || false)
 
       // Load members
       const { data: memberRows } = await supabase.from('move_members').select('*').eq('move_id', move.id)
@@ -1202,6 +1204,7 @@ function App({ session }) {
       box={selectedBox}
       room={selectedRoom}
       isOwner={isOwner}
+      moveReady={moveReady}
       session={session}
       onUpdate={handleUpdateBox}
       onBack={() => setScreen('room')}
@@ -1246,7 +1249,7 @@ function App({ session }) {
             <div className="ready-emoji">🚛</div>
             <h2 className="ready-title">Ready for the Road!</h2>
             <p className="ready-subtitle">Every single box is packed.<br/>You did it — time to move!</p>
-            <button className="btn-letsgo" onClick={() => { fireFireworks(); setShowReadyModal(false) }}>
+            <button className="btn-letsgo" onClick={async () => { await supabase.from('moves').update({ is_ready: true }).eq('id', moveId); setMoveReady(true); fireFireworks(); setShowReadyModal(false) }}>
               Let's Go! 🎉
             </button>
             <button className="btn-ready-dismiss" onClick={() => setShowReadyModal(false)}>
