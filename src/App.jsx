@@ -924,12 +924,16 @@ function ReportsTab({ rooms, onShowReady, moveReady, onBackToPacking, onRegenera
         Opens a print-ready page with every room, box, and item
       </p>
 
-      <button className="btn-back-to-packing" onClick={onRegenerateQR} style={{ marginTop: 8 }}>
-        🔄 Fix QR Codes (tap once to update all)
-      </button>
-      <p style={{ textAlign: 'center', fontSize: 12, color: '#9ca3af', marginTop: 4 }}>
-        Only needed if QR codes are opening a search instead of the app
-      </p>
+      {rooms.flatMap(r => r.boxes).some(b => b.complete && b.qrDataUrl && !b.qrDataUrl.includes('moveboss.vercel.app')) && (
+        <>
+          <button className="btn-back-to-packing" onClick={onRegenerateQR} style={{ marginTop: 8 }}>
+            🔄 Fix QR Codes (tap once to update all)
+          </button>
+          <p style={{ textAlign: 'center', fontSize: 12, color: '#9ca3af', marginTop: 4 }}>
+            Only needed if QR codes are opening a search instead of the app
+          </p>
+        </>
+      )}
     </div>
   )
 }
