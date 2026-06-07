@@ -663,8 +663,8 @@ function PackersTab({ inviteCode, members, setMembers, isOwner, ownerEmail }) {
 
   async function toggleRole(member) {
     const newRole = member.role === 'owner' ? 'packer' : 'owner'
-    await supabase.from('move_members').update({ role: newRole }).eq('id', member.id)
-    setMembers(prev => prev.map(m => m.id === member.id ? { ...m, role: newRole } : m))
+    await supabase.from('move_members').update({ role: newRole }).eq('user_id', member.user_id).eq('move_id', member.move_id)
+    setMembers(prev => prev.map(m => m.user_id === member.user_id ? { ...m, role: newRole } : m))
   }
 
   if (!isOwner) {
