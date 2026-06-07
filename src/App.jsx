@@ -39,6 +39,7 @@ function AddRoomScreen({ rooms, onSave, onCancel }) {
   const [error, setError] = useState('')
 
   const takenStarts = rooms.map(r => r.startNum)
+  const takenColors = rooms.map(r => r.color)
 
   function handleSave() {
     if (!name.trim()) { setError('Please enter a room name.'); return }
@@ -77,15 +78,20 @@ function AddRoomScreen({ rooms, onSave, onCancel }) {
       <div className="form-group">
         <label className="form-label">Color</label>
         <div className="color-grid">
-          {COLORS.map(color => (
-            <button
-              key={color.name}
-              className={`color-swatch ${selectedColor?.name === color.name ? 'selected' : ''} ${color.name === 'White' ? 'white-swatch' : ''}`}
-              style={{ background: color.hex }}
-              title={color.name}
-              onClick={() => setSelectedColor(color)}
-            />
-          ))}
+          {COLORS.map(color => {
+            const taken = takenColors.includes(color.hex)
+            const takenRoom = rooms.find(r => r.color === color.hex)
+            return (
+              <button
+                key={color.name}
+                className={`color-swatch ${selectedColor?.name === color.name ? 'selected' : ''} ${color.name === 'White' ? 'white-swatch' : ''} ${taken ? 'swatch-taken' : ''}`}
+                style={{ background: color.hex, opacity: taken ? 0.25 : 1 }}
+                title={taken ? `Used by ${takenRoom?.name}` : color.name}
+                onClick={() => !taken && setSelectedColor(color)}
+                disabled={taken}
+              />
+            )
+          })}
           <button
             className={`color-swatch custom-swatch ${selectedColor?.name === 'Custom' ? 'selected' : ''}`}
             style={{ background: selectedColor?.name === 'Custom' ? customHex : '#e5e7eb' }}
