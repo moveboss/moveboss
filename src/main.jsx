@@ -5,22 +5,22 @@ import App from './App.jsx'
 import Auth from './Auth.jsx'
 import { supabase } from './supabase.js'
 
-// Read ?join= param from URL
+// Read ?join= param from URL and persist in localStorage
 const urlParams = new URLSearchParams(window.location.search)
-const joinCode = urlParams.get('join')
+const urlJoinCode = urlParams.get('join')
+if (urlJoinCode) {
+  localStorage.setItem('mb_join_code', urlJoinCode)
+  window.history.replaceState({}, '', '/')
+}
+const joinCode = urlJoinCode || localStorage.getItem('mb_join_code')
 
 async function handleJoin(userId, email) {
-  if (!joinCode) return
-  console.log('Joining with code:', joinCode)
-  // Find the move with this invite code
-  const { data: move, error: moveError } = await supabase.from('moves').select('id').eq('invite_code', joinCode).single()
-  console.log('Move found:', move, 'Error:', moveError)
-  if (!move) return
-  // Add user as a member
-  const { error: insertError } = await supabase.from('move_members').insert({ move_id: move.id, user_id: userId, email })
-  console.log('Member insert error:', insertError)
-  // Clean up URL
-  window.history.replaceState({}, '', '/')
+  const code = localStorage.getItem('mb_join_code')
+  if (!code) return
+  const { data: move } = await supabase.from('moves').select('id').eq('invite_code', code).single()
+  if (!move) { localStorage.removeItem('mb_join_code'); return }
+  await supabase.from('move_members').insert({ move_id: move.id, user_id: userId, email })
+  localStorage.removeItem('mb_join_code')
 }
 
 function Root() {

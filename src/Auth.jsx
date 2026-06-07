@@ -10,31 +10,24 @@ export default function Auth({ joinCode }) {
   const [error, setError] = useState('')
   const [message, setMessage] = useState('')
 
-  const effectiveCode = joinCode || manualCode.trim() || null
-
   async function handleSubmit(e) {
     e.preventDefault()
     setError('')
     setMessage('')
     setLoading(true)
 
+    // Save manual join code to localStorage so it survives auth flow
+    if (manualCode.trim()) {
+      localStorage.setItem('mb_join_code', manualCode.trim())
+    }
+
     if (mode === 'signup') {
-      const { data, error } = await supabase.auth.signUp({ email, password })
+      const { error } = await supabase.auth.signUp({ email, password })
       if (error) { setError(error.message); setLoading(false); return }
-      // If we have a join code, link them now
-      if (effectiveCode && data?.user) {
-        const { data: move } = await supabase.from('moves').select('id').eq('invite_code', effectiveCode).single()
-        if (move) await supabase.from('move_members').insert({ move_id: move.id, user_id: data.user.id, email })
-      }
       setMessage('Account created! Signing you in...')
     } else {
-      const { data, error } = await supabase.auth.signInWithPassword({ email, password })
+      const { error } = await supabase.auth.signInWithPassword({ email, password })
       if (error) { setError(error.message); setLoading(false); return }
-      // If we have a join code, link them on sign in too
-      if (effectiveCode && data?.user) {
-        const { data: move } = await supabase.from('moves').select('id').eq('invite_code', effectiveCode).single()
-        if (move) await supabase.from('move_members').insert({ move_id: move.id, user_id: data.user.id, email }).select()
-      }
     }
 
     setLoading(false)
