@@ -440,7 +440,6 @@ function RoomScreen({ room, rooms, members, isOwner, session, onAddBox, onSelect
         <div class="label-code" style="color:${room.color}">${b.code}</div>
         <div class="label-room">${room.name}</div>
         <img src="${b.qrDataUrl}" />
-        <ul class="label-items">${(b.items||[]).map(i => `<li>${i.name}</li>`).join('')}</ul>
       </div>
     `).join('')
     win.document.write(`
