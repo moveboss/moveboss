@@ -720,14 +720,6 @@ function PackersTab({ inviteCode, members, setMembers, isOwner, ownerEmail }) {
         {members.length > 0 && <p style={{ fontSize: 12, color: '#9ca3af', marginTop: 10 }}>Tap a role badge to toggle between packer and owner.</p>}
       </div>
 
-      <div className="report-card">
-        <div className="report-card-title">👑 Move Creator</div>
-        <div className="member-row" style={{ marginTop: 8 }}>
-          <span className="member-avatar" style={{ background: '#7C3AED' }}>{ownerEmail[0].toUpperCase()}</span>
-          <span className="member-email">{ownerEmail}</span>
-          <span className="badge badge-complete">owner</span>
-        </div>
-      </div>
     </div>
   )
 }
