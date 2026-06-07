@@ -14,27 +14,16 @@ if (urlJoinCode) {
 }
 const joinCode = urlJoinCode || localStorage.getItem('mb_join_code')
 
-async function handleJoin(userId, email) {
-  const code = localStorage.getItem('mb_join_code')
-  if (!code) return
-  const { data: move } = await supabase.from('moves').select('id').eq('invite_code', code).single()
-  if (!move) { localStorage.removeItem('mb_join_code'); return }
-  await supabase.from('move_members').insert({ move_id: move.id, user_id: userId, email })
-  localStorage.removeItem('mb_join_code')
-}
-
 function Root() {
   const [session, setSession] = useState(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      if (session) await handleJoin(session.user.id, session.user.email)
+    supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session)
       setLoading(false)
     })
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      if (session) await handleJoin(session.user.id, session.user.email)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session)
     })
     return () => subscription.unsubscribe()

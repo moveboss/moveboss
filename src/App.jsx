@@ -775,33 +775,38 @@ function App({ session }) {
   async function loadData() {
     setLoading(true)
     try {
-      // Check if user owns a move
-      let { data: ownedMoves } = await supabase.from('moves').select('*').eq('owner_id', session.user.id)
-      let move = ownedMoves?.[0]
+      let move = null
       let owner = true
 
-      if (!move) {
-        // Check if user is a packer on someone else's move
-        const { data: membership } = await supabase.from('move_members').select('move_id').eq('user_id', session.user.id).single()
-        if (membership) {
-          const { data: sharedMove } = await supabase.from('moves').select('*').eq('id', membership.move_id).single()
-          move = sharedMove
+      // Check join code FIRST — takes priority over owned move
+      const pendingCode = localStorage.getItem('mb_join_code')
+      if (pendingCode) {
+        const { data: joinMove } = await supabase.from('moves').select('*').eq('invite_code', pendingCode).single()
+        if (joinMove) {
+          await supabase.from('move_members').upsert(
+            { move_id: joinMove.id, user_id: session.user.id, email: session.user.email },
+            { onConflict: 'move_id,user_id' }
+          )
+          localStorage.removeItem('mb_join_code')
+          move = joinMove
           owner = false
-        } else {
-          // Check localStorage for a join code entered on the login screen
-          const pendingCode = localStorage.getItem('mb_join_code')
-          if (pendingCode) {
-            const { data: joinMove } = await supabase.from('moves').select('*').eq('invite_code', pendingCode).single()
-            if (joinMove) {
-              await supabase.from('move_members').insert({ move_id: joinMove.id, user_id: session.user.id, email: session.user.email })
-              localStorage.removeItem('mb_join_code')
-              move = joinMove
-              owner = false
-            }
-          }
-          // If still no move, create a new one
-          if (!move) {
-            localStorage.removeItem('mb_join_code')
+        }
+      }
+
+      if (!move) {
+        // Check if user owns a move
+        const { data: ownedMoves } = await supabase.from('moves').select('*').eq('owner_id', session.user.id)
+        move = ownedMoves?.[0]
+
+        if (!move) {
+          // Check if already a packer on someone else's move
+          const { data: membership } = await supabase.from('move_members').select('move_id').eq('user_id', session.user.id).single()
+          if (membership) {
+            const { data: sharedMove } = await supabase.from('moves').select('*').eq('id', membership.move_id).single()
+            move = sharedMove
+            owner = false
+          } else {
+            // Create new move
             const { data, error } = await supabase.from('moves').insert({ name: 'My Move', owner_id: session.user.id }).select().single()
             if (error) throw error
             move = data
