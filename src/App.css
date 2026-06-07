@@ -652,6 +652,80 @@ body {
 }
 
 /* ── Scan button ── */
+/* ── Delete confirm modal ── */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.modal-sheet {
+  background: #fff;
+  border-radius: 16px;
+  padding: 24px;
+  width: 100%;
+  max-width: 360px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.modal-title {
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.modal-message {
+  font-size: 14px;
+  color: #374151;
+}
+
+.modal-instruction {
+  font-size: 14px;
+  color: #6b7280;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.btn-cancel-modal {
+  flex: 1;
+  padding: 10px;
+  border: 1.5px solid #d1d5db;
+  border-radius: 8px;
+  background: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  color: #374151;
+}
+
+.btn-delete-confirm {
+  flex: 1;
+  padding: 10px;
+  border: none;
+  border-radius: 8px;
+  background: #dc2626;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+
+.btn-delete-confirm:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
 .btn-delete {
   background: none;
   border: 1.5px solid #fca5a5;

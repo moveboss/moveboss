@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import QRCode from 'qrcode'
 import { supabase } from './supabase'
 import Scanner from './Scanner'
+import DeleteConfirm from './DeleteConfirm'
 import './App.css'
 
 const TABS = ['Rooms', 'All Boxes', 'Packers', 'Reports']
@@ -162,6 +163,7 @@ function AddRoomScreen({ rooms, onSave, onCancel }) {
 function BoxScreen({ box, room, onUpdate, onBack, onDelete }) {
   const [itemInput, setItemInput] = useState('')
   const [qrDataUrl, setQrDataUrl] = useState(null)
+  const [confirmDelete, setConfirmDelete] = useState(false)
   const canvasRef = useRef(null)
 
   const boxedItems = box.items || []
@@ -293,10 +295,16 @@ function BoxScreen({ box, room, onUpdate, onBack, onDelete }) {
         </div>
       )}
 
-      <button
-        className="btn-delete"
-        onClick={() => { if (window.confirm(`Delete ${box.code}? This cannot be undone.`)) onDelete(box) }}
-      >
+      {confirmDelete && (
+        <DeleteConfirm
+          title="Delete Box"
+          message={`${box.code} and all its items will be permanently deleted.`}
+          onConfirm={() => onDelete(box)}
+          onCancel={() => setConfirmDelete(false)}
+        />
+      )}
+
+      <button className="btn-delete" onClick={() => setConfirmDelete(true)}>
         🗑 Delete Box
       </button>
     </div>
@@ -313,6 +321,7 @@ function RoomScreen({ room, rooms, onAddBox, onSelectBox, onBack, onRenameRoom, 
   const [editing, setEditing] = useState(false)
   const [nameInput, setNameInput] = useState(room.name)
   const [editingColor, setEditingColor] = useState(false)
+  const [confirmDelete, setConfirmDelete] = useState(false)
 
   function handleRename() {
     const finalName = nameInput.trim().charAt(0).toUpperCase() + nameInput.trim().slice(1)
@@ -400,15 +409,16 @@ function RoomScreen({ room, rooms, onAddBox, onSelectBox, onBack, onRenameRoom, 
         + Add New Box
       </button>
 
-      <button
-        className="btn-delete"
-        onClick={() => {
-          const msg = room.boxes.length > 0
-            ? `Delete ${room.name} and all ${room.boxes.length} boxes in it? This cannot be undone.`
-            : `Delete ${room.name}? This cannot be undone.`
-          if (window.confirm(msg)) onDeleteRoom(room)
-        }}
-      >
+      {confirmDelete && (
+        <DeleteConfirm
+          title="Delete Room"
+          message={`"${room.name}" and all ${room.boxes.length} box${room.boxes.length !== 1 ? 'es' : ''} inside will be permanently deleted.`}
+          onConfirm={() => onDeleteRoom(room)}
+          onCancel={() => setConfirmDelete(false)}
+        />
+      )}
+
+      <button className="btn-delete" onClick={() => setConfirmDelete(true)}>
         🗑 Delete Room
       </button>
     </div>
