@@ -1039,8 +1039,9 @@ function App({ session }) {
           }
           // Add them as a member
           const fullName = session.user.user_metadata?.full_name || ''
-          await supabase.from('move_members').insert(
-            { move_id: joinMove.id, user_id: session.user.id, email: session.user.email, name: fullName }
+          await supabase.from('move_members').upsert(
+            { move_id: joinMove.id, user_id: session.user.id, email: session.user.email, name: fullName || undefined },
+            { onConflict: 'move_id,user_id', ignoreDuplicates: true }
           )
           localStorage.removeItem('mb_join_code')
           move = joinMove
@@ -1083,10 +1084,10 @@ function App({ session }) {
       const alreadyMember = memberRows.some(m => m.user_id === session.user.id)
       if (!alreadyMember) {
         const ownerName = session.user.user_metadata?.full_name || session.user.email
-        await supabase.from('move_members').insert({
+        await supabase.from('move_members').upsert({
           move_id: move.id, user_id: session.user.id,
           email: session.user.email, name: ownerName, role: 'owner'
-        })
+        }, { onConflict: 'move_id,user_id', ignoreDuplicates: true })
         const { data: refreshed } = await supabase.from('move_members').select('*').eq('move_id', move.id)
         memberRows = refreshed || []
       }
