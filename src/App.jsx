@@ -407,7 +407,7 @@ function BoxScreen({ box, room, isOwner, moveReady, session, onUpdate, onBack, o
         />
       )}
 
-      {(isOwner || room.assignedTo === session?.user?.id) && (
+      {(isOwner || room.assignedTo === session?.user?.id) && (!isPrivate || unlocked) && (
         <button className="btn-delete" onClick={() => setConfirmDelete(true)}>
           🗑 Delete Box
         </button>
@@ -719,32 +719,26 @@ function PackersTab({ inviteCode, members, setMembers, isOwner }) {
     setMembers(prev => prev.map(m => m.user_id === member.user_id ? { ...m, role: newRole } : m))
   }
 
-  if (!isOwner) {
-    return (
-      <div className="empty-state">
-        <p>You're packing for someone else's move.</p>
-      </div>
-    )
-  }
-
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-      <div className="report-card">
-        <div className="report-card-title">🔗 Invite Packers</div>
-        <p style={{ fontSize: 13, color: '#6b7280', marginTop: 6 }}>
-          Share your join code or link. Helpers go to <strong>moveboss.vercel.app</strong>, create an account, and enter the code below.
-        </p>
-        <div className="invite-code-display">
-          <span className="invite-code-text">{inviteCode}</span>
+      {isOwner && (
+        <div className="report-card">
+          <div className="report-card-title">🔗 Invite Packers</div>
+          <p style={{ fontSize: 13, color: '#6b7280', marginTop: 6 }}>
+            Share your join code or link. Helpers go to <strong>moveboss.vercel.app</strong>, create an account, and enter the code below.
+          </p>
+          <div className="invite-code-display">
+            <span className="invite-code-text">{inviteCode}</span>
+          </div>
+          <p style={{ fontSize: 12, color: '#9ca3af', textAlign: 'center' }}>Your join code — share this with packers</p>
+          <div className="invite-link-box" style={{ marginTop: 8 }}>
+            <span className="invite-link-text">{inviteLink}</span>
+            <button className="btn-copy" onClick={copyLink}>
+              {copied ? '✓ Copied!' : 'Copy Link'}
+            </button>
+          </div>
         </div>
-        <p style={{ fontSize: 12, color: '#9ca3af', textAlign: 'center' }}>Your join code — share this with packers</p>
-        <div className="invite-link-box" style={{ marginTop: 8 }}>
-          <span className="invite-link-text">{inviteLink}</span>
-          <button className="btn-copy" onClick={copyLink}>
-            {copied ? '✓ Copied!' : 'Copy Link'}
-          </button>
-        </div>
-      </div>
+      )}
 
       <div className="report-card">
         <div className="report-card-title">👥 Team ({members.length})</div>
@@ -753,23 +747,19 @@ function PackersTab({ inviteCode, members, setMembers, isOwner }) {
           : (
             <ul style={{ listStyle: 'none', marginTop: 12, display: 'flex', flexDirection: 'column', gap: 8 }}>
               {members.map(m => (
-                <li key={m.id} className="member-row">
+                <li key={m.user_id} className="member-row">
                   <span className="member-avatar" style={{ background: m.role === 'owner' ? '#7C3AED' : '#1D9E75' }}>{(m.name || m.email||'?')[0].toUpperCase()}</span>
                   <span className="member-email">{m.name || m.email}</span>
-                  <button
-                    className={`badge ${m.role === 'owner' ? 'badge-complete' : 'badge-packing'}`}
-                    style={{ cursor: 'pointer', border: 'none' }}
-                    onClick={() => toggleRole(m)}
-                    title="Click to change role"
-                  >
-                    {m.role}
-                  </button>
+                  {isOwner
+                    ? <button className={`badge ${m.role === 'owner' ? 'badge-complete' : 'badge-packing'}`} style={{ cursor: 'pointer', border: 'none' }} onClick={() => toggleRole(m)} title="Click to change role">{m.role}</button>
+                    : <span className={`badge ${m.role === 'owner' ? 'badge-complete' : 'badge-packing'}`}>{m.role}</span>
+                  }
                 </li>
               ))}
             </ul>
           )
         }
-        {members.length > 0 && <p style={{ fontSize: 12, color: '#9ca3af', marginTop: 10 }}>Tap a role badge to toggle between packer and owner.</p>}
+        {isOwner && members.length > 0 && <p style={{ fontSize: 12, color: '#9ca3af', marginTop: 10 }}>Tap a role badge to toggle between packer and owner.</p>}
       </div>
 
     </div>
@@ -965,7 +955,6 @@ function App({ session }) {
       .channel(`move-${moveId}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'rooms', filter: `move_id=eq.${moveId}` }, () => reloadRooms(moveId))
       .on('postgres_changes', { event: '*', schema: 'public', table: 'boxes', filter: `move_id=eq.${moveId}` }, () => reloadRooms(moveId))
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'items' }, () => reloadRooms(moveId))
       .on('postgres_changes', { event: '*', schema: 'public', table: 'move_members', filter: `move_id=eq.${moveId}` }, () => reloadMembers(moveId))
       .subscribe()
 
