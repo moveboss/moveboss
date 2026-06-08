@@ -618,7 +618,7 @@ function RoomsTab({ rooms, members, isOwner, onAddRoom, onSelectRoom }) {
             <div className="room-card-body">
               <span className="room-card-name">{room.name}</span>
               <span className="room-card-meta">{room.startNum}–{room.startNum + 99}</span>
-              <span className="room-card-boxes">{room.boxes.length} boxes{room.assignedTo ? ` · 👤 ${members.find(m => m.user_id === room.assignedTo)?.email?.split('@')[0] || 'assigned'}` : ''}</span>
+              <span className="room-card-boxes">{room.boxes.length} boxes{room.assignedTo ? ` · 👤 ${members.find(m => m.user_id === room.assignedTo)?.name || members.find(m => m.user_id === room.assignedTo)?.email?.split('@')[0] || 'assigned'}` : ''}</span>
             </div>
             <span className="room-card-arrow">›</span>
           </div>
