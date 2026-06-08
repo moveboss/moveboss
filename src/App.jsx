@@ -612,7 +612,7 @@ function RoomsTab({ rooms, members, isOwner, onAddRoom, onSelectRoom }) {
   return (
     <div>
       <div className="room-grid">
-        {rooms.map(room => (
+        {[...rooms].sort((a, b) => a.startNum - b.startNum).map(room => (
           <div key={room.id} className="room-card" onClick={() => onSelectRoom(room)}>
             <div className="room-card-bar" style={{ background: room.color, border: room.colorName === 'White' ? '1px solid #ccc' : 'none' }} />
             <div className="room-card-body">
